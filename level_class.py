@@ -64,5 +64,5 @@ class Level:
         self.pos[0] += self.scroll_xy[0]
         self.pos[1] += self.scroll_xy[1]
 
-        # self.surface.blit(self.image, self.pos)  # Если надо отрисовать карту
-        self.tiles.draw(self.surface)  # Если надо отрисовать сами тайлы
+        self.surface.blit(self.image, self.pos)  # Если надо отрисовать карту
+        # self.tiles.draw(self.surface)  # Если надо отрисовать сами тайлы
