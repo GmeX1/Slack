@@ -4,12 +4,13 @@ import time
 
 
 def split_image(image_path, draw=False):
-    def draw_rects():
-        image_new = Image.new('RGBA', (width, height), (255, 255, 255, 255))
-        draw = ImageDraw.Draw(image_new)
-        for rect in rectangles:
-            draw.rectangle(rect[1], fill=(randint(0, 255), randint(0, 255), randint(0, 255), 255))
-        image_new.save('data/rectangles.png')
+    """
+    С помощью PIl проходим по пикселям и выделяем оттуда все НЕбелые прямоугольники, содержаие только 1 цвет.
+    При стандартном запуске на выходе получаем список с прямоугольниками в формате:
+        (цвет, (левый x, верхний y, правый x, нижний y)
+    При включённой переменной "draw" также создаётся изображение rectangles.png, отображающее все прямоугольники,
+    найденные в маске
+    """
 
     image = Image.open(image_path)
     width, height = image.size
@@ -69,12 +70,17 @@ def split_image(image_path, draw=False):
                 else:
                     rectangles.append((pixel_color, (left, top, right, bottom)))
     if draw:
-        draw_rects()
+        image_new = Image.new('RGBA', (width, height), (255, 255, 255, 255))
+        draw = ImageDraw.Draw(image_new)
+        for rect in rectangles:
+            draw.rectangle(rect[1], fill=(randint(0, 255), randint(0, 255), randint(0, 255), 255))
+        image_new.save('data/rectangles.png')
     return rectangles
 
 
-start_time = time.time()
-rectangles = split_image("../../PyGame/copy/data/test_lvl_mask.png", True)
-print("--- %s seconds ---" % (time.time() - start_time))
-for rect in rectangles:
-    print(rect)
+if __name__ == '__main__':
+    start_time = time.time()
+    rectangles = split_image(input(), True)
+    print("--- %s seconds ---" % (time.time() - start_time))
+    for rect in rectangles:
+        print(rect)
