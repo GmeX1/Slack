@@ -2,6 +2,7 @@ import pygame
 import os
 import sys
 from level_class import Level
+from player_class import Player
 
 pygame.init()
 pygame.display.set_caption('Slack')
@@ -34,8 +35,10 @@ def load_image(name, colorkey=None):
 
 
 if __name__ == '__main__':
-    level = Level(load_image('maps\\test_lvl.png'), 'test_lvl', screen)
     all_sprites = pygame.sprite.Group()
+    level = Level(load_image('maps\\test_lvl.png'), 'test_lvl', screen)
+    player = Player(load_image('player/player_idle.png'), load_image('player/player_idle_mask.png'), (100, 100),
+                    all_sprites)
 
     run = True
     clock = pygame.time.Clock()
@@ -46,6 +49,19 @@ if __name__ == '__main__':
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     sys.exit()
+                if event.key in [pygame.K_UP, pygame.K_w, pygame.K_SPACE] and (player.on_ground or player.on_tile):
+                    player.jump()
+
+        # TODO: Имеется мелкий баг: движение влево приоритетнее. (Попробуй зажать вправо и затем нажать влево.
+        #  Потом наоборот. Разница на лицо)
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_a] or keys[pygame.K_LEFT]:
+            player.direction.x = -1
+        elif keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+            player.direction.x = 1
+        else:
+            player.direction.x = 0
+
         all_sprites.update()
         screen.fill((0, 0, 0))
         level.update()
