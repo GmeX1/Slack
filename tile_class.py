@@ -10,3 +10,6 @@ class Tile(pygame.sprite.Sprite):
         self.image.fill((randint(0, 255), randint(0, 255), randint(0, 255)))
         # Заполнение выше необязательно. Необходимо для удобной визуальной отладки
         self.rect = self.image.get_rect(topleft=(left, top))
+
+    def update(self, xy):
+        self.rect = self.rect.move(xy)

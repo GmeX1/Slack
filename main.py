@@ -37,7 +37,8 @@ def load_image(name, colorkey=None):
 if __name__ == '__main__':
     all_sprites = pygame.sprite.Group()
     level = Level(load_image('maps\\test_lvl.png'), 'test_lvl', screen)
-    player = Player(load_image('player/player_idle.png'), load_image('player/player_idle_mask.png'), (100, 100),
+    player = Player(load_image('player/player_idle.png'), load_image('player/player_idle_mask.png'),
+                    level.get_player_spawn(),
                     all_sprites)
 
     run = True
@@ -49,8 +50,6 @@ if __name__ == '__main__':
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     sys.exit()
-                if event.key in [pygame.K_UP, pygame.K_w, pygame.K_SPACE] and (player.on_ground or player.on_tile):
-                    player.jump()
 
         # TODO: Имеется мелкий баг: движение влево приоритетнее. (Попробуй зажать вправо и затем нажать влево.
         #  Потом наоборот. Разница на лицо)
@@ -61,8 +60,11 @@ if __name__ == '__main__':
             player.direction.x = 1
         else:
             player.direction.x = 0
+        if keys[pygame.K_UP] or keys[pygame.K_w] or keys[pygame.K_SPACE]:
+            player.jump()
 
-        all_sprites.update()
+        all_sprites.update(tiles=level.tiles)
+        level.scroll(player)
         screen.fill((0, 0, 0))
         level.update()
         all_sprites.draw(screen)
