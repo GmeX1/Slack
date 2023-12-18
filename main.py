@@ -10,7 +10,7 @@ screen = pygame.display.set_mode((info.current_w - 100, info.current_h - 100))  
 
 
 def load_image(name, colorkey=None):
-    fullname = os.path.join('data', name)
+    fullname = os.path.join('../../PyGame/copy/data', name)
     if not os.path.isfile(fullname):
         print(f"File '{fullname}' not found")
         sys.exit()

@@ -36,28 +36,14 @@ def split_image(image_path, draw=False):
             top = y
             bottom = y
 
-            for dx in range(left - 1, -1, -1):
-                if pixels[dx, y] == pixel_color:
-                    left = dx
-                else:
-                    break
-
-            for dx in range(right + 1, width):
-                if pixels[dx, y] == pixel_color:
-                    right = dx
-                else:
-                    break
-
-            for dy in range(top - 1, -1, -1):
-                if all(pixels[x, dy] == pixel_color for x in range(left, right + 1)):
-                    top = dy
-                else:
-                    break
-
-            for dy in range(bottom + 1, height):
-                if all(pixels[x, dy] == pixel_color for x in range(left, right + 1)):
-                    bottom = dy
-                else:
+            while True:
+                inter_x = len(image.crop((left, top, right + 1, bottom)).getcolors())
+                inter_y = len(image.crop((left, top, right, bottom + 1)).getcolors())
+                if inter_x < 2:
+                    right += 1
+                if inter_y < 2:
+                    bottom += 1
+                if inter_x > 1 and inter_y > 1:
                     break
 
             if (pixel_color, (left, top, right, bottom)) not in rectangles and pixel_color != (255, 255, 255, 255):
