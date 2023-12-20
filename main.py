@@ -13,37 +13,6 @@ screen = pygame.display.set_mode((info.current_w - 100, info.current_h - 100))  
 
 
 # Сделан набросок для анимации, но по физицческим возможностям разработчика анимация не доделана.
-# animation_sheet = pygame.image.load("data\player\walk_cycle.png").convert_alpha()
-#
-# frame_width = animation_sheet.get_width() // 8
-# frame_height = animation_sheet.get_height() // 1
-#
-# all_sprites = pygame.sprite.Group()
-#
-#
-# class AnimatedSprite(pygame.sprite.Sprite):
-#     def __init__(self, sheet, columns, x, y, animation_index):
-#         super().__init__(all_sprites)
-#         self.frames = []
-#         self.cut_sheet(sheet, columns, animation_index)
-#         self.cur_frame = 0
-#         self.image = self.frames[self.cur_frame]
-#         self.rect = self.rect.move(x, y)
-#
-#     def cut_sheet(self, sheet, columns, animation_index):
-#         self.rect = pygame.Rect(0, frame_height * animation_index, frame_width, frame_height)
-#         for i in range(columns):
-#             frame_location = (self.rect.w * i, 0)
-#             self.frames.append(sheet.subsurface(pygame.Rect(frame_location, self.rect.size)))
-#
-#     def update213(self):
-#         self.cur_frame = (self.cur_frame + 1) % len(self.frames)
-#         self.image = self.frames[self.cur_frame]
-#
-#
-# corgis = [AnimatedSprite(animation_sheet, 8, 1, (info.current_w - 100) // 2, (info.current_h - 100) // 2, 1)]
-
-
 def load_image(name, colorkey=None):
     path = ['data']
     if '\\' in name:
@@ -74,6 +43,12 @@ if __name__ == '__main__':
                     level.get_player_spawn(),
                     all_sprites)
 
+    player.cut_sheet(load_image("player\\walk_cycle.png"), 8, 1, 1)
+    player.cut_sheet(load_image("player\\walk_cycle_inverted.png"), 8, 1, 1)
+    player.frames.append(load_image("player\\player_idle.png"))
+    player.frames.append(load_image("player\\player_idle_inverted.png"))
+
+    last_keys = 0
     run = True
     clock = pygame.time.Clock()
     while run:
@@ -83,27 +58,36 @@ if __name__ == '__main__':
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     sys.exit()
-
         # TODO: Имеется мелкий баг: движение влево приоритетнее. (Попробуй зажать вправо и затем нажать влево.
         #  Потом наоборот. Разница на лицо)
+        # pygame.K_a = 97, , pygame.K_d = 100
         keys = pygame.key.get_pressed()
         if keys[pygame.K_a] or keys[pygame.K_LEFT]:
+            player.update_anim('left')
             player.direction.x = -1
-            # for i in corgis:
-            #     i.update213()
+            last_keys = pygame.K_a
+            print(last_keys)
 
         elif keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+            player.update_anim('right')
             player.direction.x = 1
+            last_keys = pygame.K_d
+            print(last_keys)
+
         else:
+            if last_keys == pygame.K_a:
+                player.update_anim('idle_l')
+            elif last_keys == pygame.K_d:
+                player.update_anim('idle_r')
             player.direction.x = 0
+
         if keys[pygame.K_UP] or keys[pygame.K_w] or keys[pygame.K_SPACE]:
             player.jump()
-
         all_sprites.update(tiles=level.tiles)
         level.scroll(player)
         screen.fill((0, 0, 0))
         level.update()
         all_sprites.draw(screen)
         pygame.display.flip()
-        clock.tick(100)
+        clock.tick(25)
     pygame.quit()

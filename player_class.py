@@ -7,6 +7,9 @@ class Player(pygame.sprite.Sprite):  # TODO: У игрока нет анимац
         # TODO: невидимая пустота считается частью прямоугольника :( Нужно создать прямоугольник по маске для карты
         #  (см. player_idle_mask_new.png) со смещением, чтобы спрайт персонажа не съезжал в бок. Пока что коллизия идёт
         #  по прямоугольнику со спрайта, где персонаж стоит.
+        self.frames = []
+        self.cur_frame = 0
+
         self.image = image
         self.rect = self.image.get_rect().move(pos)
         self.mask = pygame.mask.from_surface(self.image)
@@ -63,9 +66,39 @@ class Player(pygame.sprite.Sprite):  # TODO: У игрока нет анимац
             self.collisions['top'] = False
             self.collisions['bottom'] = False
 
+    def cut_sheet(self, sheet, columns, rows, animation_index):
+        image = list()
+        frame_width = sheet.get_width() // columns
+        frame_height = sheet.get_height() // rows
+        rect = pygame.Rect(0, frame_height * animation_index + 1, frame_width, frame_height)
+        for i in range(columns):
+            frame_location = (rect.w * i, 0)
+            image.append(sheet.subsurface(pygame.Rect(frame_location, rect.size)))
+        self.frames.append(image)
+
+    def update_anim(self, name):
+        if name == 'right':
+            self.cur_frame = (self.cur_frame + 1) % len(self.frames[0])
+            self.image = self.frames[0][self.cur_frame]
+        elif name == 'left':
+            self.cur_frame = (self.cur_frame + 1) % len(self.frames[1])
+            self.image = self.frames[1][self.cur_frame]
+        elif name == 'idle_r':
+            self.image = self.frames[2]
+        elif name == 'idle_l':
+            self.image = self.frames[3]
+
+
     def update(self, tiles):
         self.rect.x += self.direction.x * self.speed
         self.check_horizontal_collisions(tiles)
         self.direction.y += 0.2
         self.rect.y += self.direction.y
         self.check_vertical_collisions(tiles)
+
+
+
+
+
+
+
