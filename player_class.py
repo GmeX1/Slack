@@ -1,12 +1,13 @@
 import pygame
+from os import walk
 
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, image, map_mask, pos, walk=False, *groups):
+    def __init__(self, image, pos, walk=False, *groups):
         super().__init__(*groups)
         # TODO: невидимая пустота считается частью прямоугольника :( Чтобы не создавать кучу отдельных изображений для
         #  коллизий, я (Максим) позже переделаю изображения персонажа, сразу вырезав пустоту
-        self.frames = []
+        self.frames = {}
         self.cur_frame = 0
         self.animation_speed = 0.15 if walk else 0.15 * 4
         self.walk_mode = walk
@@ -27,6 +28,21 @@ class Player(pygame.sprite.Sprite):
             'top': False,
             'bottom': False,
         }
+
+    def import_anims(self, load_func):
+        self.frames = {
+            'idle_r': load_func('player\\idle\\idle_r.png'),
+            'idle_l': load_func('player\\idle\\idle_l.png'),
+            'walk_r': self.make_anim_list(load_func, 'player\\walk'),
+            'walk_l': self.make_anim_list(load_func, 'player\\walk', True)
+        }
+
+    def make_anim_list(self, load_func, path, flip=False):
+        anim_list = []
+        for _, __, image_files in walk('data\\' + path):
+            for image in image_files:
+                anim_list.append(pygame.transform.flip(load_func('player\\walk\\' + image), flip_x=flip, flip_y=False))
+        return anim_list
 
     def jump(self):
         if self.collisions['bottom']:
@@ -66,31 +82,21 @@ class Player(pygame.sprite.Sprite):
         if self.collisions['top'] and self.direction.y > 0:
             self.collisions['top'] = False
 
-    def cut_sheet(self, sheet, columns, rows, animation_index):
-        image = list()
-        frame_width = sheet.get_width() // columns
-        frame_height = sheet.get_height() // rows
-        rect = pygame.Rect(0, frame_height * animation_index + 1, frame_width, frame_height)
-        for i in range(columns):
-            frame_location = (rect.w * i, 0)
-            image.append(sheet.subsurface(pygame.Rect(frame_location, rect.size)))
-        self.frames.append(image)
-
     def update_anim(self, name):
         if name == 'right':
             self.cur_frame += self.animation_speed
-            self.cur_frame %= len(self.frames[0])
-            self.image = self.frames[0][int(self.cur_frame)]
+            self.cur_frame %= len(self.frames['walk_r'])
+            self.image = self.frames['walk_r'][int(self.cur_frame)]
         elif name == 'left':
             self.cur_frame += self.animation_speed
-            self.cur_frame %= len(self.frames[1])
-            self.image = self.frames[1][int(self.cur_frame)]
+            self.cur_frame %= len(self.frames['walk_l'])
+            self.image = self.frames['walk_l'][int(self.cur_frame)]
         else:
             self.cur_frame = 0
         if name == 'idle_r':
-            self.image = self.frames[2]
+            self.image = self.frames['idle_r']
         elif name == 'idle_l':
-            self.image = self.frames[3]
+            self.image = self.frames['idle_l']
 
         # Часть коллизий закомментирована, поскольку у персонажа не хватает анимаций.
         if self.collisions['bottom'] and self.collisions['right']:

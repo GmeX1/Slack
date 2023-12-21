@@ -38,15 +38,11 @@ def load_image(name, colorkey=None):
 if __name__ == '__main__':
     all_sprites = pygame.sprite.Group()
     level = Level(load_image('maps\\test_lvl.png'), 'test_lvl', screen)
-    player = Player(load_image('player/player_idle.png'), load_image('player/player_idle_mask_new.png'),
-                    level.get_player_spawn(),
+    player = Player(load_image('player\\idle\\idle_r.png'), level.get_player_spawn(),
                     level.get_story_mode(),
                     all_sprites)
-
-    player.cut_sheet(load_image("player\\walk_cycle.png"), 8, 1, 1)
-    player.cut_sheet(load_image("player\\walk_cycle_inverted.png"), 8, 1, 1)
-    player.frames.append(load_image("player\\player_idle.png"))
-    player.frames.append(load_image("player\\player_idle_inverted.png"))
+    # Здесь передаём саму функцию для импорта
+    player.import_anims(load_image)
 
     last_keys = 0
     run = True
@@ -64,6 +60,7 @@ if __name__ == '__main__':
         keys = pygame.key.get_pressed()
         if keys[pygame.K_a] or keys[pygame.K_LEFT]:
             player.update_anim('left')
+            print(last_keys)
             player.direction.x = -1
             last_keys = pygame.K_a
         elif keys[pygame.K_d] or keys[pygame.K_RIGHT]:
