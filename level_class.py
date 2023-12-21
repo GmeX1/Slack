@@ -29,7 +29,19 @@ class Level:
             rects = eval(open(f'data/maps/{level_name}.tiles', mode='r').read())
         self.player_spawn_pos = rects.pop(rects.index(list(filter(lambda x: x[0] == (0, 0, 255, 255), rects))[0]))
         self.player_spawn_pos = self.player_spawn_pos[1][:2]
+
+        # Режим карты, необходим для определения переключателя ходьба/бег у игрока
+        self.story_mode = list(filter(lambda x: x[0] == (255, 255, 0, 255), rects))
+        if self.story_mode:
+            rects.pop(rects.index(self.story_mode[0]))
+            self.story_mode = True
+        else:
+            self.story_mode = False
+
         [Tile(i[0], *i[1], self.tiles) for i in rects]
+
+    def get_story_mode(self):
+        return self.story_mode
 
     def get_player_spawn(self):
         return self.player_spawn_pos

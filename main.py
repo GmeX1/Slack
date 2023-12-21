@@ -41,6 +41,7 @@ if __name__ == '__main__':
     level = Level(load_image('maps\\test_lvl.png'), 'test_lvl', screen)
     player = Player(load_image('player/player_idle.png'), load_image('player/player_idle_mask_new.png'),
                     level.get_player_spawn(),
+                    level.get_story_mode(),
                     all_sprites)
 
     player.cut_sheet(load_image("player\\walk_cycle.png"), 8, 1, 1)
@@ -66,28 +67,28 @@ if __name__ == '__main__':
             player.update_anim('left')
             player.direction.x = -1
             last_keys = pygame.K_a
-            print(last_keys)
-
         elif keys[pygame.K_d] or keys[pygame.K_RIGHT]:
             player.update_anim('right')
             player.direction.x = 1
             last_keys = pygame.K_d
-            print(last_keys)
-
         else:
             if last_keys == pygame.K_a:
                 player.update_anim('idle_l')
             elif last_keys == pygame.K_d:
                 player.update_anim('idle_r')
             player.direction.x = 0
-
         if keys[pygame.K_UP] or keys[pygame.K_w] or keys[pygame.K_SPACE]:
             player.jump()
+
         all_sprites.update(tiles=level.tiles)
         level.scroll(player)
         screen.fill((0, 0, 0))
         level.update()
         all_sprites.draw(screen)
         pygame.display.flip()
-        clock.tick(25)
+        clock.tick(100)
     pygame.quit()
+
+# Changelog: вернул изначальный FPS, переделал проверку коллизий для исправления багов (например,
+# персонаж телепортировался при остановке у стены), добавил переменную walk (пригодится для негеймплейных уровней),
+# добавил логику у скорости анимации (переменная animation_speed), починил положение анимации во время отрисовки
