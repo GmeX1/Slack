@@ -4,6 +4,7 @@ import sys
 
 from level_class import Level
 from player_class import Player
+from menu_class import Menu
 
 pygame.init()
 pygame.display.set_caption('Slack')
@@ -36,6 +37,7 @@ def load_image(name, colorkey=None):
 
 
 if __name__ == '__main__':
+    menu = Menu(screen)
     all_sprites = pygame.sprite.Group()
     level = Level(load_image('maps\\test_lvl.png'), 'test_lvl', screen)
     player = Player(load_image('player/player_idle.png'), load_image('player/player_idle_mask_new.png'),
@@ -47,6 +49,8 @@ if __name__ == '__main__':
     player.cut_sheet(load_image("player\\walk_cycle_inverted.png"), 8, 1, 1)
     player.frames.append(load_image("player\\player_idle.png"))
     player.frames.append(load_image("player\\player_idle_inverted.png"))
+
+    menu.start()
 
     last_keys = 0
     run = True
@@ -60,7 +64,6 @@ if __name__ == '__main__':
                     sys.exit()
         # TODO: Имеется мелкий баг: движение влево приоритетнее. (Попробуй зажать вправо и затем нажать влево.
         #  Потом наоборот. Разница на лицо)
-        # pygame.K_a = 97, , pygame.K_d = 100
         keys = pygame.key.get_pressed()
         if keys[pygame.K_a] or keys[pygame.K_LEFT]:
             player.update_anim('left')
