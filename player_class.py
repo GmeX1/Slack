@@ -92,7 +92,7 @@ class Player(pygame.sprite.Sprite):
         elif name == 'idle_l':
             self.image = self.frames[3]
 
-        # TODO: К сожалению, во время прыжка и ходьбы одновременно коллизии ломаются. Пока что не знаю, как фиксить
+        # Часть коллизий закомментирована, поскольку у персонажа не хватает анимаций.
         if self.collisions['bottom'] and self.collisions['right']:
             self.rect = self.image.get_rect(bottomright=self.rect.bottomright)
         elif self.collisions['bottom'] and self.collisions['left']:

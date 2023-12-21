@@ -12,7 +12,6 @@ info = pygame.display.Info()
 screen = pygame.display.set_mode((info.current_w - 100, info.current_h - 100))  # На время тестов лучше оконный режим
 
 
-# Сделан набросок для анимации, но по физицческим возможностям разработчика анимация не доделана.
 def load_image(name, colorkey=None):
     path = ['data']
     if '\\' in name:
