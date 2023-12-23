@@ -21,11 +21,10 @@ class Player(pygame.sprite.Sprite):
         self.direction = pygame.math.Vector2(0, 0)
         self.collisions = {
             'left': False,
-            'left_x': 0,
             'right': False,
-            'right_x': 0,
             'top': False,
             'bottom': False,
+            'collision_x': 0
         }
 
     def jump(self):
@@ -37,16 +36,16 @@ class Player(pygame.sprite.Sprite):
             if self.rect.colliderect(sprite.rect):
                 if self.direction.x > 0:
                     self.collisions['right'] = True
-                    self.collisions['right_x'] = sprite.rect.left
+                    self.collisions['collision_x'] = sprite.rect.left
                     self.rect.right = sprite.rect.left
                 elif self.direction.x < 0:
                     self.collisions['left'] = True
-                    self.collisions['left_x'] = sprite.rect.right
+                    self.collisions['collision_x'] = sprite.rect.right
                     self.rect.left = sprite.rect.right
 
-        if self.collisions['right'] and (self.rect.right < self.collisions['right_x'] or self.direction.x < 0):
+        if self.collisions['right'] and self.rect.right > self.collisions['collision_x']:
             self.collisions['right'] = False
-        if self.collisions['left'] and (self.rect.left > self.collisions['left_x'] or self.direction.x > 0):
+        if self.collisions['left'] and self.rect.left < self.collisions['collision_x']:
             self.collisions['left'] = False
 
     def check_vertical_collisions(self, tiles):

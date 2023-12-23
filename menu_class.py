@@ -1,8 +1,10 @@
 import pygame
 from sys import exit as sys_exit
+from numpy.random import randint, uniform
 
 
 class Menu:
+    # TODO: Связать меню с БД
     def __init__(self, surface):
         self.show = True
         self.surface = surface
@@ -53,12 +55,22 @@ class Menu:
                 button.change_value(5)
 
     def start(self):
+        lowest_fps = 101
+
+        particles = pygame.sprite.Group()
         self.show = True
         clock = pygame.time.Clock()
         while self.show:
+            if randint(0, 11) > 8 and len(particles) < 300:
+                # if len(particles) < 5000:  # Тесты производительности
+                SparkParticle(
+                    (randint(20, self.surface.get_width() - 19), self.surface.get_height()),
+                    particles)
+
             mouse_click_pos = (-1, -1)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
+                    print(lowest_fps)
                     pygame.quit()
                     sys_exit()
                 if event.type == pygame.KEYDOWN:
@@ -68,6 +80,8 @@ class Menu:
                     mouse_click_pos = event.pos
 
             self.surface.fill((0, 0, 0))
+            particles.update()
+            particles.draw(self.surface)
             for button in self.buttons:
                 button.update()
                 if mouse_click_pos != (-1, -1) and button.click(mouse_click_pos):
@@ -79,8 +93,61 @@ class Menu:
                         self.surface.blit(layer, pos)
                 self.surface.blit(button.render, button.get_relative_pos())
 
+            fps = clock.get_fps()
+            if fps != 0:
+                lowest_fps = min(lowest_fps, clock.get_fps())
             pygame.display.flip()
             clock.tick(100)
+
+
+class SparkParticle(pygame.sprite.Sprite):
+    """На данный момент рандомизация работает через numpy. Стандартная библиотека random иногда вызывает заметные
+    пропасти в FPS. Думаю, что numpy ещё очень сильно пригодится. Если он больше нигде не будет использоваться,
+    то я всё-таки предпочту random"""
+
+    # TODO: Добавить волновое движение частицы
+    # TODO: Добавить уменьшение частицы с ходом времени
+
+    def __init__(self, pos, *groups):
+        super().__init__(*groups)
+        size = randint(4, 11)
+        self.image = pygame.Surface((size, size))
+        self.image.set_colorkey((0, 0, 0))
+        self.rect = self.image.get_rect().move(pos)
+
+        self.speed_y = uniform(1, 4)
+
+        self.half_width = self.rect.width / 2
+        self.half_height = self.rect.height / 2
+
+    def update(self):
+        self.image.fill((0, 0, 0))
+        opacity = randint(160, 256)
+
+        circle = self.image.copy()
+        circle.set_alpha(opacity - 140)
+
+        circle_center = self.image.copy()
+        circle_center.set_alpha(opacity)
+
+        pygame.draw.circle(
+            circle,
+            (119, 64, 59),
+            (self.half_width, self.half_height),
+            self.half_width
+        )
+        pygame.draw.circle(
+            circle_center,
+            (240, 182, 120),
+            (self.half_width, self.half_height),
+            self.rect.width / 4
+        )
+        self.image.blit(circle, (0, 0))
+        self.image.blit(circle_center, (0, 0))
+
+        self.rect.y -= self.speed_y
+        if self.rect.top + self.rect.height < 0:
+            self.kill()
 
 
 class Button:
