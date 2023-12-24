@@ -4,6 +4,9 @@ from numpy.random import randint, uniform, choice
 from numpy import pi, sin, cos
 
 
+# Pycharm считает, что я не использую cos и sin, но они используются в переменной func у класса SparkParticle
+
+
 class Menu:
     # TODO: Связать меню с БД
     # TODO: Добавить отображение фпс в настройках?
@@ -160,7 +163,7 @@ class Pause(Menu):
 
 
 class SparkParticle(pygame.sprite.Sprite):
-    # TODO: Возможно стоить добавить beat sync
+    # TODO: Возможно стоить добавить beat sync?
     # TODO: Сделать авто-оптимизацию под слабые устройства?
     def __init__(self, pos, *groups):
         super().__init__(*groups)
