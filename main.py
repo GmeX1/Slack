@@ -4,7 +4,7 @@ import sys
 
 from level_class import Level
 from player_class import Player
-from menu_class import Menu
+from menu_class import Menu, Pause
 
 pygame.init()
 pygame.display.set_caption('Slack')
@@ -36,8 +36,8 @@ def load_image(name, colorkey=None):
     return image
 
 
-if __name__ == '__main__':
-    menu = Menu(screen)
+def start_game():
+    pause = Pause(screen)
     all_sprites = pygame.sprite.Group()
     level = Level(load_image('maps\\test_lvl.png'), 'test_lvl', screen)
     player = Player(load_image('player/player_idle.png'), load_image('player/player_idle_mask_new.png'),
@@ -50,8 +50,6 @@ if __name__ == '__main__':
     player.frames.append(load_image("player\\player_idle.png"))
     player.frames.append(load_image("player\\player_idle_inverted.png"))
 
-    menu.start()
-
     last_keys = 0
     run = True
     clock = pygame.time.Clock()
@@ -61,7 +59,10 @@ if __name__ == '__main__':
                 run = False
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    sys.exit()
+                    pause.set_last_frame(screen.copy())
+                    menu_open = pause.start()
+                    if menu_open:
+                        return 'menu'
         # TODO: Имеется мелкий баг: движение влево приоритетнее. (Попробуй зажать вправо и затем нажать влево.
         #  Потом наоборот. Разница на лицо)
         keys = pygame.key.get_pressed()
@@ -90,3 +91,13 @@ if __name__ == '__main__':
         pygame.display.flip()
         clock.tick(100)
     pygame.quit()
+    return False
+
+
+if __name__ == '__main__':
+    menu = Menu(screen)
+    menu.start()
+    answer = start_game()
+    while answer:
+        menu.start()
+        answer = start_game()

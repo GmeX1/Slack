@@ -6,6 +6,7 @@ from numpy import pi, sin, cos
 
 class Menu:
     # TODO: Связать меню с БД
+    # TODO: Добавить отображение фпс в настройках?
     def __init__(self, surface):
         self.show = True
         self.surface = surface
@@ -56,8 +57,6 @@ class Menu:
                 button.change_value(5)
 
     def start(self):
-        lowest_fps = 101
-
         particles = pygame.sprite.Group()
         self.show = True
         clock = pygame.time.Clock()
@@ -71,12 +70,8 @@ class Menu:
             mouse_click_pos = (-1, -1)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    print(lowest_fps)
                     pygame.quit()
                     sys_exit()
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        self.show = False
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     mouse_click_pos = event.pos
 
@@ -93,12 +88,75 @@ class Menu:
                         pos[0] += layer_offset
                         self.surface.blit(layer, pos)
                 self.surface.blit(button.render, button.get_relative_pos())
-
-            fps = clock.get_fps()
-            if fps != 0:
-                lowest_fps = min(lowest_fps, clock.get_fps())
             pygame.display.flip()
             clock.tick(100)
+
+
+class Pause(Menu):
+    def __init__(self, surface):
+        super().__init__(surface)
+        self.last_frame = self.surface.copy()
+        self.last_frame.set_alpha(150)
+        self.call_menu = False
+
+    def set_last_frame(self, screen):
+        self.last_frame = screen
+        self.last_frame.set_alpha(125)
+
+    def generate_menu(self):
+        self.buttons = ['ПРОДОЛЖИТЬ', 'НАСТРОЙКИ', 'ВЫЙТИ В МЕНЮ']
+        for i in range(len(self.buttons)):
+            self.buttons[i] = Button(
+                self.font,
+                self.buttons[i],
+                (self.surface.get_width() / 2, self.surface.get_height() / 8 * (i + 3))
+            )
+
+    def handle_click(self, button):
+        if button.text == 'ПРОДОЛЖИТЬ':
+            self.show = False
+        elif button.text == 'НАСТРОЙКИ':
+            self.generate_settings()
+        elif button.text == 'ВЫЙТИ В МЕНЮ':
+            self.call_menu = True
+        elif button.text == 'НАЗАД':
+            self.generate_menu()
+        elif type(button) == ButtonSlider:
+            if button.get_click_zone() == 'left':
+                button.change_value(-5)
+            elif button.get_click_zone() == 'right':
+                button.change_value(5)
+
+    def start(self):
+        self.show = True
+        clock = pygame.time.Clock()
+        while self.show:
+            mouse_click_pos = (-1, -1)
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        self.show = False
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    mouse_click_pos = event.pos
+
+            self.surface.fill((0, 0, 0))
+            self.surface.blit(self.last_frame, (0, 0))
+            for button in self.buttons:
+                button.update()
+                if mouse_click_pos != (-1, -1) and button.click(mouse_click_pos):
+                    self.handle_click(button)
+                    if self.call_menu:
+                        self.show = False
+                        return True
+                if button.hover:
+                    for layer, layer_offset in button.get_layers():
+                        pos = [*button.get_relative_pos()]
+                        pos[0] += layer_offset
+                        self.surface.blit(layer, pos)
+                self.surface.blit(button.render, button.get_relative_pos())
+            pygame.display.flip()
+            clock.tick(100)
+        return False
 
 
 class SparkParticle(pygame.sprite.Sprite):
