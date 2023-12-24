@@ -1,6 +1,7 @@
 import pygame
 from sys import exit as sys_exit
-from numpy.random import randint, uniform
+from numpy.random import randint, uniform, choice
+from numpy import pi, sin, cos
 
 
 class Menu:
@@ -61,7 +62,7 @@ class Menu:
         self.show = True
         clock = pygame.time.Clock()
         while self.show:
-            if randint(0, 11) > 8 and len(particles) < 300:
+            if randint(0, 11) > 5 and len(particles) < 800:
                 # if len(particles) < 5000:  # Тесты производительности
                 SparkParticle(
                     (randint(20, self.surface.get_width() - 19), self.surface.get_height()),
@@ -101,28 +102,29 @@ class Menu:
 
 
 class SparkParticle(pygame.sprite.Sprite):
-    """На данный момент рандомизация работает через numpy. Стандартная библиотека random иногда вызывает заметные
-    пропасти в FPS. Думаю, что numpy ещё очень сильно пригодится. Если он больше нигде не будет использоваться,
-    то я всё-таки предпочту random"""
-
-    # TODO: Добавить волновое движение частицы
-    # TODO: Добавить уменьшение частицы с ходом времени
-
+    # TODO: Возможно стоить добавить beat sync
+    # TODO: Сделать авто-оптимизацию под слабые устройства?
     def __init__(self, pos, *groups):
         super().__init__(*groups)
-        size = randint(4, 11)
+        size = randint(4, 12)
         self.image = pygame.Surface((size, size))
         self.image.set_colorkey((0, 0, 0))
         self.rect = self.image.get_rect().move(pos)
 
-        self.speed_y = uniform(1, 4)
+        self.speed_y = uniform(0.5, 2.6)
+        self.fade_speed = pos[1] / 255
+
+        self.amplitude = uniform(0.5, 1.5)
+        self.phase = uniform(-1.5, 1.5)
+        self.func = eval(choice(['sin', 'cos'], size=1)[0])
 
         self.half_width = self.rect.width / 2
         self.half_height = self.rect.height / 2
 
     def update(self):
         self.image.fill((0, 0, 0))
-        opacity = randint(160, 256)
+        fade = (255 - round(self.rect.y / self.fade_speed))
+        opacity = randint(160, 256) - fade
 
         circle = self.image.copy()
         circle.set_alpha(opacity - 140)
@@ -146,7 +148,14 @@ class SparkParticle(pygame.sprite.Sprite):
         self.image.blit(circle_center, (0, 0))
 
         self.rect.y -= self.speed_y
-        if self.rect.top + self.rect.height < 0:
+        # Гармонические колебания с погрешностью в амплитуде и начальной фазе
+        x = self.amplitude * self.func(pi * self.rect.y / 64 + self.phase)
+        if round(x) == 0:
+            self.amplitude = uniform(0.5, 1.5)
+            self.phase += uniform(-0.5, 0.5)
+        self.rect.x += x
+
+        if self.rect.bottom < 0:
             self.kill()
 
 
