@@ -1,6 +1,16 @@
+from os import walk
 from PIL import Image, ImageDraw
-from random import randint
-import time
+from numpy.random import randint
+from pygame import transform
+
+
+def make_anim_list(load_func, path, flip=False):
+    """Функция для получения списка поверхностей из определённой директории"""
+    anim_list = []
+    for _, __, image_files in walk('data\\' + path):
+        for image in image_files:
+            anim_list.append(transform.flip(load_func(f'{path}\\' + image), flip_x=flip, flip_y=False))
+    return anim_list
 
 
 def split_image(image_path, draw=False):
@@ -73,14 +83,6 @@ def split_image(image_path, draw=False):
         image_new = Image.new('RGBA', (width, height), (255, 255, 255, 255))
         draw = ImageDraw.Draw(image_new)
         for rect in rectangles:
-            draw.rectangle(rect[1], fill=(randint(0, 255), randint(0, 255), randint(0, 255), 255))
+            draw.rectangle(rect[1], fill=(randint(0, 256), randint(0, 256), randint(0, 256), 255))
         image_new.save('data/rectangles.png')
     return rectangles
-
-
-if __name__ == '__main__':
-    start_time = time.time()
-    rectangles = split_image(input(), True)
-    print("--- %s seconds ---" % (time.time() - start_time))
-    for rect in rectangles:
-        print(rect)

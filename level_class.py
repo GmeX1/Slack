@@ -1,6 +1,6 @@
 import os
 import pygame
-from converter import split_image
+from scripts import split_image
 from tile_class import Tile
 
 

@@ -40,15 +40,11 @@ def start_game():
     pause = Pause(screen)
     all_sprites = pygame.sprite.Group()
     level = Level(load_image('maps\\test_lvl.png'), 'test_lvl', screen)
-    player = Player(load_image('player/player_idle.png'), load_image('player/player_idle_mask_new.png'),
-                    level.get_player_spawn(),
+    player = Player(load_image('player\\idle\\idle_r.png'), level.get_player_spawn(),
                     level.get_story_mode(),
                     all_sprites)
-
-    player.cut_sheet(load_image("player\\walk_cycle.png"), 8, 1, 1)
-    player.cut_sheet(load_image("player\\walk_cycle_inverted.png"), 8, 1, 1)
-    player.frames.append(load_image("player\\player_idle.png"))
-    player.frames.append(load_image("player\\player_idle_inverted.png"))
+    # Здесь передаём саму функцию для импорта
+    player.import_anims(load_image)
 
     last_keys = 0
     run = True
@@ -63,10 +59,15 @@ def start_game():
                     menu_open = pause.start()
                     if menu_open:
                         return 'menu'
-        # TODO: Имеется мелкий баг: движение влево приоритетнее. (Попробуй зажать вправо и затем нажать влево.
-        #  Потом наоборот. Разница на лицо)
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_a] or keys[pygame.K_LEFT]:
+        if (keys[pygame.K_a] or keys[pygame.K_LEFT]) and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
+            if last_keys == pygame.K_d:
+                player.update_anim('left')
+                player.direction.x = -1
+            if last_keys == pygame.K_a:
+                player.update_anim('right')
+                player.direction.x = 1
+        elif keys[pygame.K_a] or keys[pygame.K_LEFT]:
             player.update_anim('left')
             player.direction.x = -1
             last_keys = pygame.K_a
