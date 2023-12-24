@@ -1,5 +1,5 @@
 import pygame
-from random import randint
+from numpy.random import randint
 
 
 class Tile(pygame.sprite.Sprite):
@@ -7,7 +7,7 @@ class Tile(pygame.sprite.Sprite):
         super().__init__(*groups)
         self.image = pygame.Surface((right - left, bottom - top))
         # self.image.fill(color)
-        self.image.fill((randint(0, 255), randint(0, 255), randint(0, 255)))
+        self.image.fill((randint(0, 256), randint(0, 256), randint(0, 256)))
         # Заполнение выше необязательно. Необходимо для удобной визуальной отладки
         self.rect = self.image.get_rect(topleft=(left, top))
 
