@@ -54,13 +54,17 @@ if __name__ == '__main__':
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     sys.exit()
-        # TODO: Имеется мелкий баг: движение влево приоритетнее. (Попробуй зажать вправо и затем нажать влево.
-        #  Потом наоборот. Разница на лицо)
-        # pygame.K_a = 97, , pygame.K_d = 100
+
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_a] or keys[pygame.K_LEFT]:
+        if (keys[pygame.K_a] or keys[pygame.K_LEFT]) and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
+            if last_keys == pygame.K_d:
+                player.update_anim('left')
+                player.direction.x = -1
+            if last_keys == pygame.K_a:
+                player.update_anim('right')
+                player.direction.x = 1
+        elif keys[pygame.K_a] or keys[pygame.K_LEFT]:
             player.update_anim('left')
-            print(last_keys)
             player.direction.x = -1
             last_keys = pygame.K_a
         elif keys[pygame.K_d] or keys[pygame.K_RIGHT]:
