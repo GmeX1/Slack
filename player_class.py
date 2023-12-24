@@ -1,13 +1,11 @@
 import pygame
-from os import walk
+from scripts import make_anim_list
 
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, image, pos, walk=False, *groups):
         super().__init__(*groups)
-        # TODO: невидимая пустота считается частью прямоугольника :( Чтобы не создавать кучу отдельных изображений для
-        #  коллизий, я (Максим) позже переделаю изображения персонажа, сразу вырезав пустоту
-        self.frames = {}
+        self.frames = dict()
         self.cur_frame = 0
         self.animation_speed = 0.15 if walk else 0.15 * 4
         self.walk_mode = walk
@@ -33,21 +31,15 @@ class Player(pygame.sprite.Sprite):
         self.frames = {
             'idle_r': load_func('player\\idle\\idle_r.png'),
             'idle_l': load_func('player\\idle\\idle_l.png'),
-            'walk_r': self.make_anim_list(load_func, 'player\\walk'),
-            'walk_l': self.make_anim_list(load_func, 'player\\walk', True)
+            'walk_r': make_anim_list(load_func, 'player\\walk'),
+            'walk_l': make_anim_list(load_func, 'player\\walk', True)
         }
-
-    def make_anim_list(self, load_func, path, flip=False):
-        anim_list = []
-        for _, __, image_files in walk('data\\' + path):
-            for image in image_files:
-                anim_list.append(pygame.transform.flip(load_func('player\\walk\\' + image), flip_x=flip, flip_y=False))
-        return anim_list
 
     def jump(self):
         if self.collisions['bottom']:
             self.direction.y = self.jump_power
 
+    # TODO: Обнаружил баг, при котором во время прыжка игрок может начать немного проходить сквозь стены
     def check_horizontal_collisions(self, tiles):
         for sprite in tiles.sprites():
             if self.rect.colliderect(sprite.rect):
@@ -111,13 +103,6 @@ class Player(pygame.sprite.Sprite):
             self.rect = self.image.get_rect(topleft=self.rect.topleft)
         elif self.collisions['top']:
             self.rect = self.image.get_rect(midtop=self.rect.midtop)
-        # elif self.collisions['right']:
-        #     self.rect = self.image.get_rect(right=self.rect.right)
-        #     print(self.rect)
-        # elif self.collisions['left']:
-        #     self.rect = self.image.get_rect(left=self.rect.left)
-        # else:
-        #     self.rect = self.image.get_rect(center=self.rect.center)
 
     def update(self, tiles):
         self.rect.x += self.direction.x * self.speed

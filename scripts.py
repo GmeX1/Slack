@@ -1,11 +1,20 @@
+from os import walk
 from PIL import Image, ImageDraw
-from random import randint
-import time
+from numpy.random import randint
+from pygame import transform
+
+
+def make_anim_list(load_func, path, flip=False):
+    """Функция для получения списка поверхностей из определённой директории"""
+    anim_list = []
+    for _, __, image_files in walk('data\\' + path):
+        for image in image_files:
+            anim_list.append(transform.flip(load_func(f'{path}\\' + image), flip_x=flip, flip_y=False))
+    return anim_list
 
 
 def split_image(image_path, draw=False):
     """
-    !!! Альтернативный метод поиска, плохо работает на больших изображениях!
     С помощью PIl проходим по пикселям и выделяем оттуда все НЕбелые прямоугольники, содержаие только 1 цвет.
     При стандартном запуске на выходе получаем список с прямоугольниками в формате:
         (цвет, (левый x, верхний y, правый x, нижний y)
@@ -38,14 +47,28 @@ def split_image(image_path, draw=False):
             top = y
             bottom = y
 
-            while True:
-                inter_x = len(image.crop((left, top, right + 1, bottom)).getcolors())
-                inter_y = len(image.crop((left, top, right, bottom + 1)).getcolors())
-                if inter_x < 2:
-                    right += 1
-                if inter_y < 2:
-                    bottom += 1
-                if inter_x > 1 and inter_y > 1:
+            for dx in range(left - 1, -1, -1):
+                if pixels[dx, y] == pixel_color:
+                    left = dx
+                else:
+                    break
+
+            for dx in range(right + 1, width):
+                if pixels[dx, y] == pixel_color:
+                    right = dx
+                else:
+                    break
+
+            for dy in range(top - 1, -1, -1):
+                if all(pixels[x, dy] == pixel_color for x in range(left, right + 1)):
+                    top = dy
+                else:
+                    break
+
+            for dy in range(bottom + 1, height):
+                if all(pixels[x, dy] == pixel_color for x in range(left, right + 1)):
+                    bottom = dy
+                else:
                     break
 
             if (pixel_color, (left, top, right, bottom)) not in rectangles and pixel_color != (255, 255, 255, 255):
@@ -60,14 +83,6 @@ def split_image(image_path, draw=False):
         image_new = Image.new('RGBA', (width, height), (255, 255, 255, 255))
         draw = ImageDraw.Draw(image_new)
         for rect in rectangles:
-            draw.rectangle(rect[1], fill=(randint(0, 255), randint(0, 255), randint(0, 255), 255))
+            draw.rectangle(rect[1], fill=(randint(0, 256), randint(0, 256), randint(0, 256), 255))
         image_new.save('data/rectangles.png')
     return rectangles
-
-
-if __name__ == '__main__':
-    start_time = time.time()
-    rectangles = split_image(input(), True)
-    print("--- %s seconds ---" % (time.time() - start_time))
-    for rect in rectangles:
-        print(rect)
