@@ -5,6 +5,7 @@ import sys
 from level_class import Level, Camera
 from player_class import Player
 from menu_class import Menu, Pause
+from scripts import generate_tiles
 
 pygame.init()
 pygame.display.set_caption('Slack')
@@ -73,6 +74,7 @@ if __name__ == '__main__':
     pause = Pause(screen)
     menu = Menu(screen)
     menu.start()
+    generate_tiles()
     answer = start_game()
     while answer:
         menu.start()

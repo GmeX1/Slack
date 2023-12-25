@@ -46,6 +46,7 @@ class Menu:
     def handle_click(self, button):
         if button.text in ['НАЧАТЬ ИГРУ', 'ПРОДОЛЖИТЬ']:  # Пока не подключу БД, любая из кнопок просто откроет игру
             self.show = False
+            return 'close'
         elif button.text == 'НАСТРОЙКИ':
             self.generate_settings()
         elif button.text == 'ВЫЙТИ':
@@ -58,6 +59,7 @@ class Menu:
                 button.change_value(-5)
             elif button.get_click_zone() == 'right':
                 button.change_value(5)
+        return 'working'
 
     def start(self):
         particles = pygame.sprite.Group()
@@ -84,7 +86,15 @@ class Menu:
             for button in self.buttons:
                 button.update()
                 if mouse_click_pos != (-1, -1) and button.click(mouse_click_pos):
-                    self.handle_click(button)
+                    if self.handle_click(button) == 'close':
+                        self.surface.fill((0, 0, 0))
+                        render = self.font.render('ЗАГРУЗКА...', True, (255, 255, 255))
+                        self.surface.blit(
+                            render,
+                            (self.surface.get_width() / 2 - render.get_width() / 2,
+                             self.surface.get_height() / 2 - render.get_height() / 2)
+                        )
+                        break
                 if button.hover:
                     for layer, layer_offset in button.get_layers():
                         pos = [*button.get_relative_pos()]
