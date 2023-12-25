@@ -1,4 +1,4 @@
-from os import walk
+import os
 from PIL import Image, ImageDraw
 from numpy.random import randint
 from pygame import transform
@@ -7,7 +7,7 @@ from pygame import transform
 def make_anim_list(load_func, path, flip=False):
     """Функция для получения списка поверхностей из определённой директории"""
     anim_list = []
-    for _, __, image_files in walk('data\\' + path):
+    for _, __, image_files in os.walk('data\\' + path):
         for image in image_files:
             anim_list.append(transform.flip(load_func(f'{path}\\' + image), flip_x=flip, flip_y=False))
     return anim_list

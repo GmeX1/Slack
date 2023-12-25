@@ -2,7 +2,7 @@ import pygame
 import os
 import sys
 
-from level_class import Level
+from level_class import Level, Camera
 from player_class import Player
 from menu_class import Menu, Pause
 
@@ -37,13 +37,15 @@ def load_image(name, colorkey=None):
 
 
 def start_game():
-    pause = Pause(screen)
     all_sprites = pygame.sprite.Group()
-    level = Level(load_image('maps\\test_lvl_3.png'), 'test_lvl_3', screen)
+    camera = Camera(screen)
+    level = Level(load_image('maps\\test_lvl.png'), 'test_lvl', screen, camera)
     player = Player(load_image('player\\idle\\idle_r.png'), level.get_player_spawn(),
                     level.get_story_mode(),
-                    all_sprites)
+                    all_sprites, camera)
     player.import_anims(load_image)
+    camera.set_max((level.image.get_width(), level.image.get_height()))
+    camera.get_map_image(level.image)
 
     run = True
     clock = pygame.time.Clock()
@@ -59,10 +61,8 @@ def start_game():
                         return 'menu'
 
         all_sprites.update(tiles=level.tiles)
-        level.scroll(player)
         screen.fill((0, 0, 0))
-        level.update()
-        all_sprites.draw(screen)
+        camera.draw_offset(player)
         pygame.display.flip()
         clock.tick(100)
     pygame.quit()
@@ -70,6 +70,7 @@ def start_game():
 
 
 if __name__ == '__main__':
+    pause = Pause(screen)
     menu = Menu(screen)
     menu.start()
     answer = start_game()
