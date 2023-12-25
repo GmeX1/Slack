@@ -9,9 +9,11 @@ class Player(pygame.sprite.Sprite):
         self.cur_frame = 0
         self.animation_speed = 0.15 if walk else 0.15 * 4
         self.walk_mode = walk
+        self.last_keys = None
 
         self.image = image
         self.rect = self.image.get_rect().move(pos)
+        self.map_rect = pygame.Rect(pos, (25, self.rect.height))  # Статичная коробка - всё-таки лучший вариант
         self.mask = pygame.mask.from_surface(self.image)
 
         self.base_speed = 8 if not self.walk_mode else 2
@@ -38,37 +40,36 @@ class Player(pygame.sprite.Sprite):
         if self.collisions['bottom']:
             self.direction.y = self.jump_power
 
-    # TODO: Обнаружил баг, при котором во время прыжка игрок может начать немного проходить сквозь стены
     def check_horizontal_collisions(self, tiles):
         for sprite in tiles.sprites():
-            if self.rect.colliderect(sprite.rect):
+            if self.map_rect.colliderect(sprite.rect):
                 if self.direction.x > 0:
                     self.collisions['right'] = True
                     self.collisions['collision_x'] = sprite.rect.left
-                    self.rect.right = sprite.rect.left
+                    self.map_rect.right = sprite.rect.left
                 elif self.direction.x < 0:
                     self.collisions['left'] = True
                     self.collisions['collision_x'] = sprite.rect.right
-                    self.rect.left = sprite.rect.right
+                    self.map_rect.left = sprite.rect.right
 
-        if self.collisions['right'] and self.rect.right > self.collisions['collision_x']:
+        if self.collisions['right'] and self.map_rect.right > self.collisions['collision_x']:
             self.collisions['right'] = False
-        if self.collisions['left'] and self.rect.left < self.collisions['collision_x']:
+        if self.collisions['left'] and self.map_rect.left < self.collisions['collision_x']:
             self.collisions['left'] = False
 
     def check_vertical_collisions(self, tiles):
         for sprite in tiles.sprites():
-            if self.rect.colliderect(sprite.rect):
+            if self.map_rect.colliderect(sprite.rect):
                 if self.direction.y > 0:
                     self.collisions['bottom'] = True
                     self.direction.y = 0
-                    self.rect.bottom = sprite.rect.top
+                    self.map_rect.bottom = sprite.rect.top
                 elif self.direction.y < 0:
                     self.collisions['top'] = True
                     self.direction.y = 0
-                    self.rect.top = sprite.rect.bottom
+                    self.map_rect.top = sprite.rect.bottom
 
-        if self.collisions['bottom'] and self.direction.y < 0 or self.direction.y > 1:
+        if self.collisions['bottom'] and self.direction.y < 0:
             self.collisions['bottom'] = False
         if self.collisions['top'] and self.direction.y > 0:
             self.collisions['top'] = False
@@ -84,28 +85,44 @@ class Player(pygame.sprite.Sprite):
             self.image = self.frames['walk_l'][int(self.cur_frame)]
         else:
             self.cur_frame = 0
+
         if name == 'idle_r':
             self.image = self.frames['idle_r']
         elif name == 'idle_l':
             self.image = self.frames['idle_l']
 
-        # Часть коллизий закомментирована, поскольку у персонажа не хватает анимаций.
-        if self.collisions['bottom'] and self.collisions['right']:
-            self.rect = self.image.get_rect(bottomright=self.rect.bottomright)
-        elif self.collisions['bottom'] and self.collisions['left']:
-            self.rect = self.image.get_rect(bottomleft=self.rect.bottomleft)
-        elif self.collisions['bottom']:
-            self.rect = self.image.get_rect(midbottom=self.rect.midbottom)
-        elif self.collisions['top'] and self.collisions['right']:
-            self.rect = self.image.get_rect(topright=self.rect.topright)
-        elif self.collisions['top'] and self.collisions['left']:
-            self.rect = self.image.get_rect(topleft=self.rect.topleft)
-        elif self.collisions['top']:
-            self.rect = self.image.get_rect(midtop=self.rect.midtop)
+        self.rect = self.image.get_rect(midbottom=self.map_rect.midbottom)
+
+    def get_keys(self):
+        keys = pygame.key.get_pressed()
+        if (keys[pygame.K_a] or keys[pygame.K_LEFT]) and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
+            if self.last_keys == pygame.K_d:
+                self.update_anim('left')
+                self.direction.x = -1
+            if self.last_keys == pygame.K_a:
+                self.update_anim('right')
+                self.direction.x = 1
+        elif keys[pygame.K_a] or keys[pygame.K_LEFT]:
+            self.update_anim('left')
+            self.direction.x = -1
+            self.last_keys = pygame.K_a
+        elif keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+            self.update_anim('right')
+            self.direction.x = 1
+            self.last_keys = pygame.K_d
+        else:
+            if self.last_keys == pygame.K_a:
+                self.update_anim('idle_l')
+            elif self.last_keys == pygame.K_d:
+                self.update_anim('idle_r')
+            self.direction.x = 0
+        if keys[pygame.K_UP] or keys[pygame.K_w] or keys[pygame.K_SPACE]:
+            self.jump()
 
     def update(self, tiles):
-        self.rect.x += self.direction.x * self.speed
+        self.map_rect.x += self.direction.x * self.speed
         self.check_horizontal_collisions(tiles)
         self.direction.y += 0.2
-        self.rect.y += self.direction.y
+        self.map_rect.y += self.direction.y
         self.check_vertical_collisions(tiles)
+        self.get_keys()

@@ -10,10 +10,12 @@ class Level:
         self.pos = [0, 0]
         self.surface = surface
         self.tiles = pygame.sprite.Group()
-        self.scroll_xy = (0, 0)
+        self.scroll_x = 0
+        self.scroll_y = 0
 
         # Подгрузка тайлов из файла имя_карты.tiles, либо свежая генерация с последующим сохранением в файл.
         # Синим цветом на маске обозначена точка спавна игрока.
+        # Жёлтым цветом на маске обозначен режим игры (сюжетный или основной)
         if not os.path.isfile(os.path.join(*['data', 'maps'], f'{level_name}.tiles')):
             # text = pygame.font.SysFont('Times New Roman', 100, True)
             # render = text.render('ЗАГРУЗКА...', True, (255, 0, 0))
@@ -50,31 +52,34 @@ class Level:
         # TODO: Карочи, здесь проверяется положение игрока и создаётся смещение карты и тайлов, если игрок преодолевает
         #  определённый порог. Надо сделать отдельно ещё смещение камеры по Y по аналогии. Я закомментировал свой код,
         #  но он не работает должным образом. Почини пжлст.
-        player_x = player.rect.centerx  # TODO: если спамить вправо или влево, можно преодолеть порог :(
-        player_y = player.rect.centery
-        if player_x < self.surface.get_width() / 6 and player.direction.x < 0:
-            self.scroll_xy = (player.base_speed, self.scroll_xy[1])
+        player_x = player.map_rect.centerx
+        player_y = player.map_rect.centery
+
+        if player_x < self.surface.get_width() / 6 and player.direction.x < 0 and self.pos[0] < 0:
+            self.scroll_x = player.base_speed
             player.speed = 0
-        elif player_x > (self.surface.get_width() / 6) * 5 and player.direction.x > 0:
-            self.scroll_xy = (-player.base_speed, self.scroll_xy[1])
+        elif (player_x > (self.surface.get_width() / 6) * 5 and player.direction.x > 0 and
+              self.pos[0] + self.image.get_width() - player.base_speed > self.surface.get_width()):
+            self.scroll_x = -player.base_speed
             player.speed = 0
         else:
-            self.scroll_xy = (0, self.scroll_xy[1])
+            self.scroll_x = 0
             player.speed = player.base_speed
 
-        # if player_y < self.surface.get_height() / 6 and player.direction.y < 0:
-        #     self.scroll_xy = (self.scroll_xy[0], -player.direction.y)
-        #     # player.direction.y = 0
-        # elif player_y > (self.surface.get_height() / 6) * 5 and player.direction.y > 0:
-        #     self.scroll_xy = (self.scroll_xy[0], -player.direction.y)
-        #     # player.direction.y = 0
+        # if player_y < self.surface.get_height() / 6 and player.direction.y < 0 and self.pos[1] < 0:
+        #     self.scroll_y = player.direction.y
+        #     player.direction.y = 0
+        # elif (player_y > (self.surface.get_height() / 6) * 5 and player.direction.y > 0 and
+        #       self.pos[1] + self.image.get_height() - player.direction.y > self.surface.get_height()):
+        #     self.scroll_y = -player.direction.y
+        #     player.direction.y = 0
         # else:
-        #     self.scroll_xy = (self.scroll_xy[0], 0)
+        #     self.scroll_x = 0
 
     def update(self):
-        self.tiles.update(self.scroll_xy)
-        self.pos[0] += self.scroll_xy[0]
-        self.pos[1] += self.scroll_xy[1]
+        self.pos[0] += self.scroll_x
+        self.pos[1] += self.scroll_y
+        self.tiles.update((self.scroll_x, self.scroll_y))
 
         # self.surface.blit(self.image, self.pos)  # Если надо отрисовать карту
         self.tiles.draw(self.surface)  # Если надо отрисовать сами тайлы

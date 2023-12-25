@@ -39,14 +39,12 @@ def load_image(name, colorkey=None):
 def start_game():
     pause = Pause(screen)
     all_sprites = pygame.sprite.Group()
-    level = Level(load_image('maps\\test_lvl.png'), 'test_lvl', screen)
+    level = Level(load_image('maps\\test_lvl_3.png'), 'test_lvl_3', screen)
     player = Player(load_image('player\\idle\\idle_r.png'), level.get_player_spawn(),
                     level.get_story_mode(),
                     all_sprites)
-    # Здесь передаём саму функцию для импорта
     player.import_anims(load_image)
 
-    last_keys = 0
     run = True
     clock = pygame.time.Clock()
     while run:
@@ -59,30 +57,6 @@ def start_game():
                     menu_open = pause.start()
                     if menu_open:
                         return 'menu'
-        keys = pygame.key.get_pressed()
-        if (keys[pygame.K_a] or keys[pygame.K_LEFT]) and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
-            if last_keys == pygame.K_d:
-                player.update_anim('left')
-                player.direction.x = -1
-            if last_keys == pygame.K_a:
-                player.update_anim('right')
-                player.direction.x = 1
-        elif keys[pygame.K_a] or keys[pygame.K_LEFT]:
-            player.update_anim('left')
-            player.direction.x = -1
-            last_keys = pygame.K_a
-        elif keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-            player.update_anim('right')
-            player.direction.x = 1
-            last_keys = pygame.K_d
-        else:
-            if last_keys == pygame.K_a:
-                player.update_anim('idle_l')
-            elif last_keys == pygame.K_d:
-                player.update_anim('idle_r')
-            player.direction.x = 0
-        if keys[pygame.K_UP] or keys[pygame.K_w] or keys[pygame.K_SPACE]:
-            player.jump()
 
         all_sprites.update(tiles=level.tiles)
         level.scroll(player)
