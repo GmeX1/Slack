@@ -1,8 +1,13 @@
 import os
 import sqlite3
+import pygame
 from PIL import Image, ImageDraw
 from numpy.random import randint
-from pygame import transform
+
+
+def show_fps(screen, clock):
+    font = pygame.font.Font('data\\fonts\\better-vcr.ttf', 48)
+    screen.blit(font.render(str(round(clock.get_fps())), True, (255, 255, 255)), (5, 5))
 
 
 def database_create():
@@ -26,7 +31,7 @@ def make_anim_list(load_func, path, flip=False):
     anim_list = []
     for _, __, image_files in os.walk('data\\' + path):
         for image in image_files:
-            anim_list.append(transform.flip(load_func(f'{path}\\' + image), flip_x=flip, flip_y=False))
+            anim_list.append(pygame.transform.flip(load_func(f'{path}\\' + image), flip_x=flip, flip_y=False))
     return anim_list
 
 

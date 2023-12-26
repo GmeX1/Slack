@@ -2,6 +2,7 @@ import pygame
 from sys import exit as sys_exit
 from numpy.random import randint, uniform, choice
 from numpy import pi, sin, cos
+from scripts import show_fps
 
 
 # Pycharm считает, что я не использую cos и sin, но они используются в переменной func у класса SparkParticle
@@ -12,9 +13,13 @@ class Menu:
     # TODO: Добавить отображение фпс в настройках?
     def __init__(self, surface, db):
         self.db = db
+        self.cur = db.cursor()
+        self.fps_switch = self.cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()[0][0]
+
         self.show = True
         self.surface = surface
         self.font = pygame.font.Font('data\\fonts\\better-vcr.ttf', 72)
+        self.settings_font = pygame.font.Font('data\\fonts\\better-vcr.ttf', 64)
         self.buttons = list()
         self.generate_menu()
 
@@ -28,21 +33,32 @@ class Menu:
             )
 
     def generate_settings(self):
-        self.buttons = ['ГРОМКОСТЬ ЭФФЕКТОВ', 'effect_volume', 'ГРОМКОСТЬ МУЗЫКИ', 'music_volume', 'НАЗАД']
+        self.buttons = ['show_fps', 'ГРОМКОСТЬ ЭФФЕКТОВ', 'effect_volume', 'ГРОМКОСТЬ МУЗЫКИ', 'music_volume',
+                        'НАЗАД']
         for i in range(len(self.buttons)):
             if 'volume' in self.buttons[i]:
                 self.buttons[i] = ButtonSlider(
                     self.buttons[i],
                     self.db,
-                    self.font,
+                    self.settings_font,
                     self.buttons[i],
-                    (self.surface.get_width() / 2, self.surface.get_height() / 8 * (i + 3)),
+                    (self.surface.get_width() / 2, self.surface.get_height() / 10 * (i + 4)),
+                )
+            elif self.buttons[i].endswith('fps'):
+                self.buttons[i] = ButtonSlider(
+                    self.buttons[i],
+                    self.db,
+                    self.settings_font,
+                    self.buttons[i],
+                    (self.surface.get_width() / 2, self.surface.get_height() / 10 * (i + 4)),
+                    True,
+                    'СЧЁТЧИК FPS'
                 )
             else:
                 self.buttons[i] = Button(
-                    self.font,
+                    self.settings_font,
                     self.buttons[i],
-                    (self.surface.get_width() / 2, self.surface.get_height() / 8 * (i + 3)),
+                    (self.surface.get_width() / 2, self.surface.get_height() / 10 * (i + 4)),
                     False if i != len(self.buttons) - 1 else True
                 )
 
@@ -52,15 +68,18 @@ class Menu:
         elif button.text == 'НАСТРОЙКИ':
             self.generate_settings()
         elif button.text == 'ВЫЙТИ':
+            self.db.commit()
             pygame.quit()
             sys_exit()
         elif button.text == 'НАЗАД':
+            self.db.commit()
             self.generate_menu()
         elif type(button) == ButtonSlider:
             if button.get_click_zone() == 'left':
                 button.change_value(-5)
             elif button.get_click_zone() == 'right':
                 button.change_value(5)
+            self.fps_switch = self.cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()[0][0]
 
     def start(self):
         particles = pygame.sprite.Group()
@@ -94,6 +113,8 @@ class Menu:
                         pos[0] += layer_offset
                         self.surface.blit(layer, pos)
                 self.surface.blit(button.render, button.get_relative_pos())
+            if self.fps_switch:
+                show_fps(self.surface, clock)
             pygame.display.flip()
             clock.tick(100)
 
@@ -124,8 +145,10 @@ class Pause(Menu):
         elif button.text == 'НАСТРОЙКИ':
             self.generate_settings()
         elif button.text == 'ВЫЙТИ В МЕНЮ':
+            self.db.commit()
             self.call_menu = True
         elif button.text == 'НАЗАД':
+            self.db.commit()
             self.generate_menu()
         elif type(button) == ButtonSlider:
             if button.get_click_zone() == 'left':
@@ -282,16 +305,21 @@ class Button:
 
 
 class ButtonSlider(Button):
-    def __init__(self, name, db, font, text, pos=(0, 0), hover=True):
+    def __init__(self, name, db, font, text, pos=(0, 0), hover=True, draw_slide=''):
         super().__init__(font, text, pos, hover)
         self.db = db
         self.cur = self.db.cursor()
         self.name = name
+        self.draw_slide = draw_slide
+        self.value_range = range(0, 101) if len(draw_slide) == 0 else (0, 1)
         self.value = self.cur.execute(f'SELECT value FROM settings WHERE name="{self.name}"').fetchall()
         if not self.value:
-            self.value = 50
-            self.cur.execute('')  # TODO: сделать запрос на сохран
-        print(self.value)
+            self.value = 50 if len(draw_slide) == 0 else 0
+            self.cur.execute(f'INSERT INTO settings (name, value) VALUES("{self.name}",{self.value})')
+            self.db.commit()
+        else:
+            self.value = self.value[0][0]
+
         self.render = self.font.render(f'< {str(self.value)}% >', False, self.color)
         if self.hover:
             self.anim_offset_x = 0
@@ -302,10 +330,11 @@ class ButtonSlider(Button):
 
     def change_value(self, value):
         self.value += value
-        if self.value > 100:
-            self.value = 100
-        elif self.value < 0:
-            self.value = 0
+        if self.value > self.value_range[-1]:
+            self.value = self.value_range[-1]
+        elif self.value < self.value_range[0]:
+            self.value = self.value_range[0]
+        self.cur.execute(f'UPDATE settings SET value={self.value} WHERE name="{self.name}"')
 
     def get_click_zone(self):
         if pygame.mouse.get_pos()[0] < self.rect.centerx:
@@ -315,7 +344,15 @@ class ButtonSlider(Button):
         return 'center'
 
     def render_text(self):
-        self.render = self.font.render(f'< {str(self.value)}% >', False, self.color)
-        self.layers[0][0] = self.font.render(f'< {str(self.value)}% >', False, (172, 0, 0))
-        self.layers[1][0] = self.font.render(f'< {str(self.value)}% >', False, (0, 0, 172))
-        self.rect = self.render.get_rect().move(self.get_relative_pos())
+        if not self.draw_slide:
+            self.render = self.font.render(f'< {str(self.value)}% >', False, self.color)
+            if self.hover:
+                self.layers[0][0] = self.font.render(f'< {str(self.value)}% >', False, (172, 0, 0))
+                self.layers[1][0] = self.font.render(f'< {str(self.value)}% >', False, (0, 0, 172))
+            self.rect = self.render.get_rect().move(self.get_relative_pos())
+        else:
+            self.render = self.font.render(f'< {self.draw_slide} >', False, self.color)
+            if self.hover:
+                self.layers[0][0] = self.font.render(f'< {self.draw_slide} >', False, (172, 0, 0))
+                self.layers[1][0] = self.font.render(f'< {self.draw_slide} >', False, (0, 0, 172))
+            self.rect = self.render.get_rect().move(self.get_relative_pos())

@@ -7,7 +7,7 @@ import sys
 from level_class import Level, Camera
 from player_class import Player
 from menu_class import Menu, Pause
-from scripts import database_create
+from scripts import database_create, show_fps
 
 pygame.init()
 pygame.display.set_caption('Slack')
@@ -50,6 +50,9 @@ def start_game():
     camera.set_max((level.image.get_width(), level.image.get_height()))
     camera.get_map_image(level.image)
 
+    cur = db.cursor()
+    fps_switch = cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()[0][0]
+
     run = True
     clock = pygame.time.Clock()
     while run:
@@ -62,10 +65,13 @@ def start_game():
                     menu_open = pause.start()
                     if menu_open:
                         return 'menu'
+                    fps_switch = cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()[0][0]
 
         all_sprites.update(tiles=level.tiles)
         screen.fill((0, 0, 0))
         camera.draw_offset(player)
+        if fps_switch:
+            show_fps(screen, clock)
         pygame.display.flip()
         clock.tick(100)
     pygame.quit()
