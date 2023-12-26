@@ -3,7 +3,7 @@ import os
 import sys
 
 from level_class import Level, Camera
-from player_class import Player
+from player_class import Player, Bullet
 from menu_class import Menu, Pause
 
 pygame.init()
@@ -43,6 +43,7 @@ def start_game():
     player = Player(load_image('player\\idle\\idle_r.png'), level.get_player_spawn(),
                     level.get_story_mode(),
                     all_sprites, camera)
+    # enemy = Enemy(load_image('player\\idle\\idle_l.png'), level.get_player_spawn(), all_sprites,camera)
     player.import_anims(load_image)
     camera.set_max((level.image.get_width(), level.image.get_height()))
     camera.get_map_image(level.image)
@@ -53,13 +54,15 @@ def start_game():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    pause.set_last_frame(screen.copy())
-                    menu_open = pause.start()
-                    if menu_open:
-                        return 'menu'
-
+            if event.type == pygame.MOUSEBUTTONUP:
+                Bullet(load_image('bullet\\bullet.png'), (player.map_rect.center), player.last_keys, all_sprites,
+                       camera)
+            # if event.type == pygame.KEYDOWN:
+            #     if event.key == pygame.K_ESCAPE:
+            #         pause.set_last_frame(screen.copy())
+            #         menu_open = pause.start()
+            #         if menu_open:
+            #             return 'menu'
         all_sprites.update(tiles=level.tiles)
         screen.fill((0, 0, 0))
         camera.draw_offset(player)
@@ -70,10 +73,11 @@ def start_game():
 
 
 if __name__ == '__main__':
-    pause = Pause(screen)
-    menu = Menu(screen)
-    menu.start()
-    answer = start_game()
-    while answer:
-        menu.start()
-        answer = start_game()
+    start_game()
+#     pause = Pause(screen)
+#     menu = Menu(screen)
+#     menu.start()
+#     answer = start_game()
+#     while answer:
+#         menu.start()
+#         answer = start_game()

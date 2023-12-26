@@ -107,13 +107,14 @@ class Player(Entity):
         super().__init__(image, pos, *groups)
         self.animation_speed = 0.15 if walk else 0.15 * 4
         self.walk_mode = walk
-        self.last_keys = None
-
+        self.last_keys = 100
         self.map_rect = pygame.Rect(pos, (25, self.rect.height))
-
         self.base_speed = 8 if not self.walk_mode else 2
         self.speed = self.base_speed
         self.jump_power = -6 if not self.walk_mode else -3
+
+        self.bullets = []
+        self.bullet = pygame.image.load('data\\bullet\\bullet.png').convert_alpha()
 
     def import_anims(self, load_func):
         self.frames = {
@@ -156,3 +157,23 @@ class Player(Entity):
         self.map_rect.y += self.direction.y
         self.check_vertical_collisions(tiles)
         self.get_keys()
+
+
+class Bullet(Entity):
+    def __init__(self, image, pos, last, *groups):
+        super().__init__(image, pos, *groups)
+        self.image = image
+        self.rect = self.image.get_rect().move(pos)
+        self.speed = 50
+        self.direction.x = -1 if last < 100 else 1
+
+    def update(self, tiles):
+        self.map_rect.x += self.speed * self.direction.x
+        self.check_horizontal_collisions(tiles)
+        self.check_vertical_collisions(tiles)
+        if self.collisions['right'] or self.collisions['left']:
+            self.kill()
+
+    class Enemy(Entity):
+        def __init__(self, image, pos, *groups):
+            super().__init__(image, pos, *groups)

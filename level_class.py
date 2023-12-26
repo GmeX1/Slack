@@ -1,5 +1,5 @@
-import os
 import pygame
+import os
 from scripts import split_image
 from tile_class import Tile
 
