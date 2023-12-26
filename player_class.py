@@ -2,23 +2,23 @@ import pygame
 from scripts import make_anim_list
 
 
-class Player(pygame.sprite.Sprite):
-    def __init__(self, image, pos, walk=False, *groups):
+class Entity(pygame.sprite.Sprite):
+    def __init__(self, image, pos, *groups):
         super().__init__(*groups)
+        placeholder = 1
+
         self.frames = dict()
         self.cur_frame = 0
-        self.animation_speed = 0.15 if walk else 0.15 * 4
-        self.walk_mode = walk
-        self.last_keys = None
+        self.animation_speed = placeholder
 
         self.image = image
         self.rect = self.image.get_rect().move(pos)
-        self.map_rect = pygame.Rect(pos, (25, self.rect.height))  # Статичная коробка - всё-таки лучший вариант
+        self.map_rect = pygame.Rect(pos, (placeholder, self.rect.height))
         self.mask = pygame.mask.from_surface(self.image)
 
-        self.base_speed = 8 if not self.walk_mode else 2
+        self.base_speed = placeholder
         self.speed = self.base_speed
-        self.jump_power = -6 if not self.walk_mode else -3
+        self.jump_power = placeholder
         self.direction = pygame.math.Vector2(0, 0)
         self.collisions = {
             'left': False,
@@ -30,10 +30,10 @@ class Player(pygame.sprite.Sprite):
 
     def import_anims(self, load_func):
         self.frames = {
-            'idle_r': load_func('player\\idle\\idle_r.png'),
-            'idle_l': load_func('player\\idle\\idle_l.png'),
-            'walk_r': make_anim_list(load_func, 'player\\walk'),
-            'walk_l': make_anim_list(load_func, 'player\\walk', True)
+            'idle_r': load_func(),
+            'idle_l': load_func(None),
+            'walk_r': make_anim_list(load_func, None),
+            'walk_l': make_anim_list(load_func, None, True)
         }
 
     def jump(self):
@@ -91,7 +91,37 @@ class Player(pygame.sprite.Sprite):
         elif name == 'idle_l':
             self.image = self.frames['idle_l']
 
+        # TODO: посмотри на ходьюу влево и на ходьбу вправо. Вроде я отцентровал X, но это вообще не помогло(
         self.rect = self.image.get_rect(midbottom=self.map_rect.midbottom)
+
+    def update(self, tiles):
+        self.map_rect.x += self.direction.x * self.speed
+        self.check_horizontal_collisions(tiles)
+        self.direction.y += 0.2
+        self.map_rect.y += self.direction.y
+        self.check_vertical_collisions(tiles)
+
+
+class Player(Entity):
+    def __init__(self, image, pos, walk=False, *groups):
+        super().__init__(image, pos, *groups)
+        self.animation_speed = 0.15 if walk else 0.15 * 4
+        self.walk_mode = walk
+        self.last_keys = None
+
+        self.map_rect = pygame.Rect(pos, (25, self.rect.height))
+
+        self.base_speed = 8 if not self.walk_mode else 2
+        self.speed = self.base_speed
+        self.jump_power = -6 if not self.walk_mode else -3
+
+    def import_anims(self, load_func):
+        self.frames = {
+            'idle_r': load_func('player\\idle\\idle_r.png'),
+            'idle_l': load_func('player\\idle\\idle_l.png'),
+            'walk_r': make_anim_list(load_func, 'player\\walk'),
+            'walk_l': make_anim_list(load_func, 'player\\walk', True)
+        }
 
     def get_keys(self):
         keys = pygame.key.get_pressed()
