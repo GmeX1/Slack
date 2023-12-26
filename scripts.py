@@ -1,7 +1,24 @@
 import os
+import sqlite3
 from PIL import Image, ImageDraw
 from numpy.random import randint
 from pygame import transform
+
+
+def database_create():
+    database = sqlite3.connect('data\\db\\gamedata.db')
+    cur = database.cursor()
+    cur.execute('''
+        CREATE TABLE settings (
+        id    INTEGER PRIMARY KEY ASC AUTOINCREMENT
+                      UNIQUE
+                      NOT NULL,
+        name  TEXT    UNIQUE
+                      NOT NULL,
+        value INTEGER NOT NULL
+        );''')
+    database.commit()
+    return database
 
 
 def make_anim_list(load_func, path, flip=False):

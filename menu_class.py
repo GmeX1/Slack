@@ -10,7 +10,8 @@ from numpy import pi, sin, cos
 class Menu:
     # TODO: Связать меню с БД
     # TODO: Добавить отображение фпс в настройках?
-    def __init__(self, surface):
+    def __init__(self, surface, db):
+        self.db = db
         self.show = True
         self.surface = surface
         self.font = pygame.font.Font('data\\fonts\\better-vcr.ttf', 72)
@@ -31,6 +32,8 @@ class Menu:
         for i in range(len(self.buttons)):
             if 'volume' in self.buttons[i]:
                 self.buttons[i] = ButtonSlider(
+                    self.buttons[i],
+                    self.db,
                     self.font,
                     self.buttons[i],
                     (self.surface.get_width() / 2, self.surface.get_height() / 8 * (i + 3)),
@@ -96,8 +99,8 @@ class Menu:
 
 
 class Pause(Menu):
-    def __init__(self, surface):
-        super().__init__(surface)
+    def __init__(self, surface, db):
+        super().__init__(surface, db)
         self.last_frame = self.surface.copy()
         self.last_frame.set_alpha(150)
         self.call_menu = False
@@ -279,9 +282,16 @@ class Button:
 
 
 class ButtonSlider(Button):
-    def __init__(self, font, text, pos=(0, 0), hover=True):
+    def __init__(self, name, db, font, text, pos=(0, 0), hover=True):
         super().__init__(font, text, pos, hover)
-        self.value = 50
+        self.db = db
+        self.cur = self.db.cursor()
+        self.name = name
+        self.value = self.cur.execute(f'SELECT value FROM settings WHERE name="{self.name}"').fetchall()
+        if not self.value:
+            self.value = 50
+            self.cur.execute('')  # TODO: сделать запрос на сохран
+        print(self.value)
         self.render = self.font.render(f'< {str(self.value)}% >', False, self.color)
         if self.hover:
             self.anim_offset_x = 0
@@ -290,7 +300,7 @@ class ButtonSlider(Button):
                 [self.font.render(f'< {str(self.value)}% >', False, (0, 0, 172)), 0]
             ]
 
-    def change_value(self, value):  # В будущем пригодится для реальной связи со звуком
+    def change_value(self, value):
         self.value += value
         if self.value > 100:
             self.value = 100

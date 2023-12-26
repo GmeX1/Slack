@@ -1,3 +1,5 @@
+import sqlite3
+
 import pygame
 import os
 import sys
@@ -5,6 +7,7 @@ import sys
 from level_class import Level, Camera
 from player_class import Player
 from menu_class import Menu, Pause
+from scripts import database_create
 
 pygame.init()
 pygame.display.set_caption('Slack')
@@ -70,8 +73,12 @@ def start_game():
 
 
 if __name__ == '__main__':
-    pause = Pause(screen)
-    menu = Menu(screen)
+    if not os.path.exists(os.path.join('data', 'db', 'gamedata.db')):
+        db = database_create()
+    else:
+        db = sqlite3.connect('data\\db\\gamedata.db')
+    pause = Pause(screen, db)
+    menu = Menu(screen, db)
     menu.start()
     answer = start_game()
     while answer:
