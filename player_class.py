@@ -5,7 +5,7 @@ from scripts import make_anim_list
 class Entity(pygame.sprite.Sprite):
     def __init__(self, image, pos, *groups):
         super().__init__(*groups)
-        placeholder = 1
+        placeholder = 1  # Это типа вместо None, чтобы вставить хотя бы какие-то цифры
 
         self.frames = dict()
         self.cur_frame = 0
