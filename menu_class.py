@@ -9,8 +9,6 @@ from scripts import show_fps
 
 
 class Menu:
-    # TODO: Связать меню с БД
-    # TODO: Добавить отображение фпс в настройках?
     def __init__(self, surface, db):
         self.db = db
         self.cur = db.cursor()
@@ -119,7 +117,7 @@ class Menu:
             clock.tick(100)
 
 
-class Pause(Menu):
+class Pause(Menu):  # TODO: накладывается один фпс на другой
     def __init__(self, surface, db):
         super().__init__(surface, db)
         self.last_frame = self.surface.copy()
@@ -155,9 +153,13 @@ class Pause(Menu):
                 button.change_value(-5)
             elif button.get_click_zone() == 'right':
                 button.change_value(5)
+            self.fps_switch = self.cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()[0][0]
 
     def start(self):
+        self.fps_switch = self.cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()[0][0]
+        self.call_menu = False
         self.show = True
+        self.generate_menu()
         clock = pygame.time.Clock()
         while self.show:
             mouse_click_pos = (-1, -1)
@@ -183,6 +185,8 @@ class Pause(Menu):
                         pos[0] += layer_offset
                         self.surface.blit(layer, pos)
                 self.surface.blit(button.render, button.get_relative_pos())
+                if self.fps_switch:
+                    show_fps(self.surface, clock)
             pygame.display.flip()
             clock.tick(100)
         return False
