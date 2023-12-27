@@ -1,6 +1,8 @@
 import pygame
 from scripts import make_anim_list
 import random
+from sys import exit as sys_exit
+# from main import end_game
 
 
 class Entity(pygame.sprite.Sprite):
@@ -174,13 +176,14 @@ class Bullet(Entity):
 
 
 class Enemy(Entity):
-    def __init__(self, image, pos, *groups):
+    def __init__(self, image, pos, live, *groups):
         super().__init__(image, pos, *groups)
         self.speed = 2
         self.direction = pygame.math.Vector2(0, 0)
         self.standing_time = 0
         self.time_to_change_direction = random.uniform(1, 5)
         self.choose_direction()
+        self.live = live
 
     def choose_direction(self):
         self.direction.x = random.choice([-1, 1])
@@ -206,8 +209,14 @@ class Enemy(Entity):
         if self.collisions['left']:
             self.collisions['left'] = False
             self.direction.x = 0
+            self.live -=1
             self.choose_direction()
         elif self.collisions['right']:
             self.collisions['right'] = False
             self.direction.x = 0
+            self.live -= 1
             self.choose_direction()
+
+        if self.live == 2:
+            pygame.quit()
+            sys_exit()

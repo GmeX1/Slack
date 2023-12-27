@@ -9,6 +9,7 @@ from menu_class import Menu, Pause
 pygame.init()
 pygame.display.set_caption('Slack')
 info = pygame.display.Info()
+life_counter = 3
 # screen = pygame.display.set_mode((info.current_w, info.current_h), pygame.FULLSCREEN)
 screen = pygame.display.set_mode((info.current_w - 100, info.current_h - 100))  # На время тестов лучше оконный режим
 
@@ -36,25 +37,24 @@ def load_image(name, colorkey=None):
     return image
 
 
-def start_game():
+def start_game(run=True):
     all_sprites = pygame.sprite.Group()
     camera = Camera(screen)
     level = Level(load_image('maps\\test_lvl.png'), 'test_lvl', screen, camera)
     player = Player(load_image('player\\idle\\idle_r.png'), level.get_player_spawn(),
                     level.get_story_mode(),
                     all_sprites, camera)
-    enemy = Enemy(load_image('player\\idle\\idle_l.png'), level.get_player_spawn(), all_sprites, camera)
+    enemy = Enemy(load_image('player\\idle\\idle_l.png'), level.get_player_spawn(), life_counter, all_sprites, camera)
 
     player.import_anims(load_image)
     camera.set_max((level.image.get_width(), level.image.get_height()))
     camera.get_map_image(level.image)
 
-    run = True
     clock = pygame.time.Clock()
     while run:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                run = False
+                end_game()
             if event.type == pygame.MOUSEBUTTONUP:
                 Bullet(load_image('bullet\\bullet.png'), player.map_rect.center, player.last_keys, all_sprites,
                        camera)
@@ -71,6 +71,10 @@ def start_game():
         clock.tick(60)
     pygame.quit()
     return False
+
+
+def end_game():
+    return start_game(False)
 
 
 if __name__ == '__main__':
