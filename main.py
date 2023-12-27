@@ -1,5 +1,4 @@
 import sqlite3
-
 import pygame
 import os
 import sys
@@ -8,6 +7,7 @@ from level_class import Level, Camera
 from player_class import Player
 from menu_class import Menu, Pause
 from scripts import database_create, show_fps
+from UI_class import UI
 
 pygame.init()
 pygame.display.set_caption('Slack')
@@ -53,6 +53,9 @@ def start_game():
     cur = db.cursor()
     fps_switch = cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()[0][0]
 
+    hp = 5  # Условно, пока не подключусь к хп врага из другой ветки
+    ui.set_hp(hp)
+
     run = True
     clock = pygame.time.Clock()
     while run:
@@ -66,10 +69,19 @@ def start_game():
                     if menu_open:
                         return 'menu'
                     fps_switch = cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()[0][0]
+                if event.key == pygame.K_h:
+                    hp -= 1
+                    ui.remove_hp()
+                if event.key == pygame.K_j:
+                    hp += 1
+                    ui.set_hp(hp)
 
         all_sprites.update(tiles=level.tiles)
         screen.fill((0, 0, 0))
         camera.draw_offset(player)
+
+        ui.draw()
+
         if fps_switch:
             show_fps(screen, clock)
         pygame.display.flip()
@@ -83,6 +95,7 @@ if __name__ == '__main__':
         db = database_create()
     else:
         db = sqlite3.connect('data\\db\\gamedata.db')
+    ui = UI(screen, screen.get_size(), load_image('icons\\hp_bigger.png'), load_image)
     pause = Pause(screen, db)
     menu = Menu(screen, db)
     menu.start()
