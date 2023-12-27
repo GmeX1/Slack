@@ -27,7 +27,7 @@ class UI:
     def draw(self):
         self.surface.fill((0, 0, 0, 0))
         if self.destroy_anim['frame'] != -1:
-            self.destroy_anim['frame'] += 0.3
+            self.destroy_anim['frame'] += 0.2
             if int(self.destroy_anim['frame']) >= len(self.destroy_anim['images']):
                 self.destroy_anim['frame'] = -1
             else:
