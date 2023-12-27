@@ -1,6 +1,6 @@
 import pygame
 from scripts import make_anim_list
-import random
+from numpy import random
 from sys import exit as sys_exit
 
 
@@ -97,12 +97,12 @@ class Entity(pygame.sprite.Sprite):
         # TODO: посмотри на ходьюу влево и на ходьбу вправо. Вроде я отцентровал X, но это вообще не помогло(
         self.rect = self.image.get_rect(midbottom=self.map_rect.midbottom)
 
-    def update(self, tiles):
+    def update(self, **kwargs):
         self.map_rect.x += self.direction.x * self.speed
-        self.check_horizontal_collisions(tiles)
+        self.check_horizontal_collisions(kwargs['tiles'])
         self.direction.y += 0.2
         self.map_rect.y += self.direction.y
-        self.check_vertical_collisions(tiles)
+        self.check_vertical_collisions(kwargs['tiles'])
 
 
 class Player(Entity):
@@ -150,36 +150,42 @@ class Player(Entity):
         if keys[pygame.K_UP] or keys[pygame.K_w] or keys[pygame.K_SPACE]:
             self.jump()
 
-    def update(self, tiles):
+    def update(self, **kwargs):
         self.map_rect.x += self.direction.x * self.speed
-        self.check_horizontal_collisions(tiles)
+        self.check_horizontal_collisions(kwargs['tiles'])
         self.direction.y += 0.2
         self.map_rect.y += self.direction.y
-        self.check_vertical_collisions(tiles)
+        self.check_vertical_collisions(kwargs['tiles'])
         self.get_keys()
 
 
 class Bullet(Entity):
-    def __init__(self, image, pos, last, *groups):
+    def __init__(self, image, pos, last, initiator, *groups):
         super().__init__(image, pos, *groups)
-        self.image = image
-        self.rect = self.image.get_rect().move(pos)
-        self.speed = 50
+        self.check_for = 'player' if initiator == 'enemy' else 'enemy'
+        self.map_rect = self.rect.copy()
+        self.base_speed = 5
         self.direction.x = -1 if last < 100 else 1
-        self.groups = groups[0]
 
-    def kil_enemy(self):
-        # TODO: борахлят колайдеры врга, невсегда получается убить спервого раза, умерают все вргаи сразу
-        for i in self.groups:
-            if i.__class__ == Enemy and self.map_rect.colliderect(i.rect):
-                i.kill()
-                self.kill()
+    def kill_entity(self, enemies):
+        if pygame.sprite.spritecollide(self, enemies, True, collided=pygame.sprite.collide_mask):
+            self.kill()
 
-    def update(self, tiles):
-        self.kil_enemy()
-        self.map_rect.x += self.speed * self.direction.x
-        self.check_horizontal_collisions(tiles)
-        self.check_vertical_collisions(tiles)
+    def update(self, **kwargs):
+        self.map_rect.x += self.base_speed * self.direction.x
+        # Поскольку у пули анимаций нет, то просто переписываем координаты с прямоугольника карты на прямоугольник
+        # изображения. С врагом пока что аналогично, потому что там тоже нет анимаций (пока что)
+        self.rect.x = self.map_rect.x
+
+        if self.check_for == 'enemy':
+            self.kill_entity(kwargs['enemies'])
+        else:
+            pass  # Если враги будут стрелять, то пригодится
+
+        self.kill_entity(kwargs['enemies'])
+        self.check_horizontal_collisions(kwargs['tiles'])
+        # Я думаю, что возможен вариант диагональных пуль. Потом посмотрим, как пойдёт, но было бы неплохо такое сделать
+        self.check_vertical_collisions(kwargs['tiles'])
         if self.collisions['right'] or self.collisions['left']:
             self.kill()
 
@@ -187,12 +193,16 @@ class Bullet(Entity):
 class Enemy(Entity):
     def __init__(self, image, pos, live, player, *groups):
         super().__init__(image, pos, *groups)
-        self.speed = 2
-        self.direction = pygame.math.Vector2(0, 0)
+        self.image.fill((255, 0, 0))
+        self.mask = pygame.mask.from_surface(self.image)
+        self.map_rect = self.rect.copy()
+
+        self.base_speed = 2
+        self.speed = self.base_speed
+
         self.standing_time = 0
         self.choose_direction()
-        # тут уже надос мотреть индивидуально, как по мне 5 секунд много
-        self.time_to_change_direction = random.uniform(1, 5)
+        self.time_to_change_direction = random.uniform(1, 4)
         self.live = live
         self.player = player
 
@@ -204,30 +214,20 @@ class Enemy(Entity):
         if self.standing_time >= self.time_to_change_direction:
             self.choose_direction()
             self.standing_time = 0
-            self.time_to_change_direction = random.uniform(1, 3)
+            self.time_to_change_direction = random.uniform(1, 4)
             self.direction.x = random.choice([-1, 0, 1])
 
-    # def kil_enemy(self):
-    #     if self.bul.map_rect.colliderect(self.map_rect):
-    #         self.kill()
-
-    def update(self, tiles):
-        # self.kil_enemy()
+    def update(self, **kwargs):
         self.check_time_event()
+
         self.map_rect.x += self.direction.x * self.speed
-        self.check_horizontal_collisions(tiles)
+        self.rect.x = self.map_rect.x  # Причина та же, что с пулей
+        self.check_horizontal_collisions(kwargs['tiles'])
 
-        if self.collisions['left']:
-            self.collisions['left'] = False
+        self.direction.y += 0.2
+        self.map_rect.y += self.direction.y
+        self.rect.x = self.map_rect.x  # Причина та же, что с пулей
+        self.check_vertical_collisions(kwargs['tiles'])
+
+        if self.collisions['left'] or self.collisions['right']:
             self.direction.x = 0
-        elif self.collisions['right']:
-            self.collisions['right'] = False
-            self.direction.x = 0
-
-    # if self.map_rect.colliderect(self.player.map_rect):
-    #     print(self.map_rect, self.player.map_rect)
-    #     print("Столкновение с игроком!")
-
-    # if self.live == 2:
-    #     pygame.quit()
-    #     sys_exit()

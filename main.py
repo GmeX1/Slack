@@ -39,56 +39,50 @@ def load_image(name, colorkey=None):
 
 def start_game(run=True):
     all_sprites = pygame.sprite.Group()
+    enemies = pygame.sprite.Group()
     camera = Camera(screen)
     level = Level(load_image('maps\\test_lvl.png'), 'test_lvl', screen, camera)
     player = Player(load_image('player\\idle\\idle_r.png'), level.get_player_spawn(),
                     level.get_story_mode(),
                     all_sprites, camera)
-    enemy = Enemy(load_image('player\\idle\\idle_l.png'), level.get_player_spawn(), life_counter, player,
-                  all_sprites, camera)
+    enemy = Enemy(pygame.Surface((10, 50)), level.get_player_spawn(), life_counter, player,
+                  all_sprites, enemies, camera)
 
     player.import_anims(load_image)
     camera.set_max((level.image.get_width(), level.image.get_height()))
     camera.get_map_image(level.image)
 
     clock = pygame.time.Clock()
-    print(player.map_rect.center)
     while run:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                end_game()
-            if event.type == pygame.MOUSEBUTTONUP:
-                Bullet(load_image('bullet\\bullet.png'), player.map_rect.center, player.last_keys, all_sprites,
-                       camera)
+                pygame.quit()
+                return False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    Bullet(load_image('bullet\\bullet.png'), player.map_rect.center, player.last_keys, 'player',
+                           all_sprites, camera)
 
-            # if event.type == pygame.KEYDOWN:
-            #     if event.key == pygame.K_ESCAPE:
-            #         pause.set_last_frame(screen.copy())
-            #         menu_open = pause.start()
-            #         if menu_open:
-            #             return 'menu'
-        all_sprites.update(tiles=level.tiles)
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pause.set_last_frame(screen.copy())
+                    menu_open = pause.start()
+                    if menu_open:
+                        return 'menu'
+        all_sprites.update(tiles=level.tiles, enemies=enemies)
         screen.fill((0, 0, 0))
         camera.draw_offset(player)
         pygame.display.flip()
-        clock.tick(60)
-
-        # for i in all_sprites:
-        #     print(i.map_rect)
+        clock.tick(100)
     pygame.quit()
     return False
 
 
-def end_game():
-    return start_game(False)
-
-
 if __name__ == '__main__':
-    start_game()
-#     pause = Pause(screen)
-#     menu = Menu(screen)
-#     menu.start()
-#     answer = start_game()
-#     while answer:
-#         menu.start()
-#         answer = start_game()
+    pause = Pause(screen)
+    menu = Menu(screen)
+    menu.start()
+    answer = start_game()
+    while answer:
+        menu.start()
+        answer = start_game()
