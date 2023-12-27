@@ -38,8 +38,8 @@ class Entity(pygame.sprite.Sprite):
         }
 
     def jump(self):
-        if self.collisions['bottom']:
-            self.direction.y = self.jump_power
+        # if self.collisions['bottom']:  #TODO: ВЕРНУТЬ ОГРАНИЧЕНИЕ
+        self.direction.y = self.jump_power
 
     def check_horizontal_collisions(self, tiles):
         for sprite in tiles.sprites():
@@ -163,12 +163,15 @@ class Bullet(Entity):
         super().__init__(image, pos, *groups)
         self.check_for = 'player' if initiator == 'enemy' else 'enemy'
         self.map_rect = self.rect.copy()
-        self.base_speed = 5
+        # TODO: Кажется, придётся либо пулю делать больше, либо делать трассировку попадания :) Если скорость пули
+        #  высокая, то она с большим шансом просто "перешагнёт" врага и коллизии формально не будет
+        self.base_speed = 10
         self.direction.x = -1 if last < 100 else 1
 
     def kill_entity(self, enemies):
-        if pygame.sprite.spritecollide(self, enemies, True, collided=pygame.sprite.collide_mask):
-            self.kill()
+        if pygame.sprite.spritecollide(self, enemies, False):
+            if pygame.sprite.spritecollide(self, enemies, True, collided=pygame.sprite.collide_mask):
+                self.kill()
 
     def update(self, **kwargs):
         self.map_rect.x += self.base_speed * self.direction.x

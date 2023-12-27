@@ -43,14 +43,17 @@ def start_game(run=True):
     camera = Camera(screen)
     level = Level(load_image('maps\\test_lvl.png'), 'test_lvl', screen, camera)
     player = Player(load_image('player\\idle\\idle_r.png'), level.get_player_spawn(),
-                    level.get_story_mode(),
+                    False,  # TODO: ВЕРНУТЬ СЮЖЕТНЫЙ МАРКЕР level.get_story_mode()
                     all_sprites, camera)
-    Enemy(pygame.Surface((10, 50)), level.get_player_spawn(), life_counter, player,
-          all_sprites, enemies, camera)
 
     player.import_anims(load_image)
     camera.set_max((level.image.get_width(), level.image.get_height()))
     camera.get_map_image(level.image)
+
+    [Enemy(pygame.Surface((10, 50)), i, life_counter, player,
+           all_sprites, enemies, camera) for i in level.get_enemies_pos()]
+    # Здесь создаются враги в позициях, полученных из level.get_enemies_pos()
+    # Я пока что выключил сюжетный режим для игрока и сделал бесконечный прыжок для упрощения рабочего процесса
 
     clock = pygame.time.Clock()
     while run:
@@ -80,7 +83,7 @@ def start_game(run=True):
 if __name__ == '__main__':
     pause = Pause(screen)
     menu = Menu(screen)
-    menu.start()
+    # menu.start()  # TODO: РАСКОММЕНТИРУЙ, ЭТА ШТУКА ВЫКЛЮЧАЕТ СТАРТ МЕНЮ
     answer = start_game()
     while answer:
         menu.start()
