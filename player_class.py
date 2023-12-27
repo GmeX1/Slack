@@ -1,10 +1,8 @@
 import pygame
 from scripts import make_anim_list
 from numpy import random
-from sys import exit as sys_exit
 
 
-# from main import end_game
 class Entity(pygame.sprite.Sprite):
     def __init__(self, image, pos, *groups):
         super().__init__(*groups)
@@ -112,6 +110,7 @@ class Player(Entity):
         self.walk_mode = walk
         self.last_keys = 100
         self.map_rect = pygame.Rect(pos, (25, self.rect.height))
+
         self.base_speed = 8 if not self.walk_mode else 2
         self.speed = self.base_speed
         self.jump_power = -6 if not self.walk_mode else -3

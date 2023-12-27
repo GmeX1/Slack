@@ -45,8 +45,8 @@ def start_game(run=True):
     player = Player(load_image('player\\idle\\idle_r.png'), level.get_player_spawn(),
                     level.get_story_mode(),
                     all_sprites, camera)
-    enemy = Enemy(pygame.Surface((10, 50)), level.get_player_spawn(), life_counter, player,
-                  all_sprites, enemies, camera)
+    Enemy(pygame.Surface((10, 50)), level.get_player_spawn(), life_counter, player,
+          all_sprites, enemies, camera)
 
     player.import_anims(load_image)
     camera.set_max((level.image.get_width(), level.image.get_height()))
@@ -56,8 +56,7 @@ def start_game(run=True):
     while run:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
-                return False
+                run = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     Bullet(load_image('bullet\\bullet.png'), player.map_rect.center, player.last_keys, 'player',
