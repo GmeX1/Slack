@@ -1,5 +1,6 @@
 import pygame
 from scripts import make_anim_list
+import random
 
 
 class Entity(pygame.sprite.Sprite):
@@ -113,9 +114,6 @@ class Player(Entity):
         self.speed = self.base_speed
         self.jump_power = -6 if not self.walk_mode else -3
 
-        self.bullets = []
-        self.bullet = pygame.image.load('data\\bullet\\bullet.png').convert_alpha()
-
     def import_anims(self, load_func):
         self.frames = {
             'idle_r': load_func('player\\idle\\idle_r.png'),
@@ -174,6 +172,42 @@ class Bullet(Entity):
         if self.collisions['right'] or self.collisions['left']:
             self.kill()
 
-    class Enemy(Entity):
-        def __init__(self, image, pos, *groups):
-            super().__init__(image, pos, *groups)
+
+class Enemy(Entity):
+    def __init__(self, image, pos, *groups):
+        super().__init__(image, pos, *groups)
+        self.speed = 2
+        self.direction = pygame.math.Vector2(0, 0)
+        self.standing_time = 0
+        self.time_to_change_direction = random.uniform(1, 5)
+        self.choose_direction()
+
+    def choose_direction(self):
+        self.direction.x = random.choice([-1, 1])
+
+    def update(self, tiles):
+        # self.standing_time += 1 / 100 # Через сколько произаёдет событие
+        # Если таймер дошёл то рандомного таймера 1,5
+        # if self.standing_time >= self.time_to_change_direction:
+        #       #Обнуление таймера
+        #     self.standing_time = 0
+        #
+        #     self.time_to_change_direction = random.uniform(1, 5)
+        #     self.choose_direction()
+        #     print(self.standing_time, self.time_to_change_direction)
+        #
+        # if self.map_rect.colliderect(player.map_rect):
+        #     # Добавьте ваш код для обработки столкновения с игроком здесь
+        #     print("Столкновение с игроком!")
+
+        self.map_rect.x += self.direction.x * self.speed
+        self.check_horizontal_collisions(tiles)
+
+        if self.collisions['left']:
+            self.collisions['left'] = False
+            self.direction.x = 0
+            self.choose_direction()
+        elif self.collisions['right']:
+            self.collisions['right'] = False
+            self.direction.x = 0
+            self.choose_direction()
