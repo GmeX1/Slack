@@ -69,12 +69,16 @@ def start_game():
                     if menu_open:
                         return 'menu'
                     fps_switch = cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()[0][0]
-                if event.key == pygame.K_h:
-                    hp -= 1
-                    ui.remove_hp()
+                if event.key == pygame.K_q:
+                    ui.activate_rage()
+                if event.key == pygame.K_h:  # Для тестов
+                    if hp > 0:
+                        hp -= 1
+                        ui.remove_hp()
                 if event.key == pygame.K_j:
                     hp += 1
                     ui.set_hp(hp)
+                    ui.add_rage(25)
 
         all_sprites.update(tiles=level.tiles)
         screen.fill((0, 0, 0))
@@ -95,7 +99,7 @@ if __name__ == '__main__':
         db = database_create()
     else:
         db = sqlite3.connect('data\\db\\gamedata.db')
-    ui = UI(screen, screen.get_size(), load_image('icons\\hp_bigger.png'), load_image)
+    ui = UI(screen, screen.get_size(), load_image)
     pause = Pause(screen, db)
     menu = Menu(screen, db)
     menu.start()
