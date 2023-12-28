@@ -20,7 +20,7 @@ class Entity(pygame.sprite.Sprite):
 
         self.base_speed = placeholder
         self.speed = self.base_speed
-        self.jump_power = 10
+        self.jump_power = placeholder
         self.direction = pygame.math.Vector2(0, 0)
         self.collisions = {
             'left': False,
@@ -39,8 +39,8 @@ class Entity(pygame.sprite.Sprite):
         }
 
     def jump(self):
-        if self.collisions['bottom']:
-            self.direction.y = self.jump_power
+        # if self.collisions['bottom']:  #TODO: ВЕРНУТЬ ОГРАНИЧЕНИЕ
+        self.direction.y = self.jump_power
 
     def check_horizontal_collisions(self, tiles):
         for sprite in tiles.sprites():
@@ -166,7 +166,6 @@ class Player(Entity):
         self.direction.y += 0.2
         self.map_rect.y += self.direction.y
         self.check_vertical_collisions(kwargs['tiles'])
-        self.elapsed_time = int(time.time() - self.start_time)
         self.get_keys()
 
 
@@ -175,12 +174,15 @@ class Bullet(Entity):
         super().__init__(image, pos, *groups)
         self.check_for = 'player' if initiator == 'enemy' else 'enemy'
         self.map_rect = self.rect.copy()
-        self.base_speed = 50
+        # TODO: Кажется, придётся либо пулю делать больше, либо делать трассировку попадания :) Если скорость пули
+        #  высокая, то она с большим шансом просто "перешагнёт" врага и коллизии формально не будет
+        self.base_speed = 10
         self.direction.x = -1 if last < 100 else 1
 
     def kill_entity(self, enemies):
-        if pygame.sprite.spritecollide(self, enemies, True, collided=pygame.sprite.collide_mask):
-            self.kill()
+        if pygame.sprite.spritecollide(self, enemies, False):
+            if pygame.sprite.spritecollide(self, enemies, True, collided=pygame.sprite.collide_mask):
+                self.kill()
 
     def update(self, **kwargs):
         self.map_rect.x += self.base_speed * self.direction.x
@@ -216,14 +218,11 @@ class Enemy(Entity):
         self.time_to_change_direction = random.uniform(1, 4)
         self.live = live
         self.player = player
-        self.attack = None
-        self.last_direction_x = 0
 
     def choose_direction(self):
         self.direction.x = random.choice([-1, 1])
 
     def check_time_event(self):
-        # Не виду смысла подвязывать настоящее время, т.к если игрок свернёт игру, то получитсья баг
         self.standing_time += 1 / 100
         if self.standing_time >= self.time_to_change_direction:
             self.choose_direction()
