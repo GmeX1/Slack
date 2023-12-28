@@ -39,8 +39,8 @@ class Entity(pygame.sprite.Sprite):
         }
 
     def jump(self):
-        # if self.collisions['bottom']:  #TODO: ВЕРНУТЬ ОГРАНИЧЕНИЕ
-        self.direction.y = self.jump_power
+        if self.collisions['bottom']:
+            self.direction.y = self.jump_power
 
     def check_horizontal_collisions(self, tiles):
         for sprite in tiles.sprites():

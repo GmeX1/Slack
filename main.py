@@ -39,6 +39,8 @@ def load_image(name, colorkey=None):
 
 
 def start_game(run=True):
+    bullet_icon = load_image('bullet\\bullet.png')
+
     all_sprites = pygame.sprite.Group()
     enemies = pygame.sprite.Group()
     player_group = pygame.sprite.GroupSingle()
@@ -46,19 +48,14 @@ def start_game(run=True):
 
     level = Level(load_image('maps\\test_lvl.png'), 'test_lvl', screen, camera)
     player = Player(load_image('player\\idle\\idle_r.png'), level.get_player_spawn(),
-                    False,  # TODO: ВЕРНУТЬ СЮЖЕТНЫЙ МАРКЕР level.get_story_mode()
+                    level.get_story_mode(),
                     all_sprites, camera, player_group)
-
-    bullet_icon = load_image('bullet\\bullet.png')
-    Enemy(pygame.Surface((10, 50)), level.get_player_spawn(), life_counter, player, bullet_icon,
-          all_sprites, enemies, camera)
-
     player.import_anims(load_image)
     camera.set_max((level.image.get_width(), level.image.get_height()))
     camera.get_map_image(level.image)
 
-    # Здесь создаются враги в позициях, полученных из level.get_enemies_pos()
-    # Я пока что выключил сюжетный режим для игрока и сделал бесконечный прыжок для упрощения рабочего процесса
+    [Enemy(pygame.Surface((10, 50)), i, life_counter, player, bullet_icon,
+           all_sprites, enemies, camera) for i in level.get_enemies_pos()]
     clock = pygame.time.Clock()
     shoot_timer = pygame.time.get_ticks()
     while run:
