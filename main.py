@@ -41,24 +41,24 @@ def load_image(name, colorkey=None):
 def start_game(run=True):
     all_sprites = pygame.sprite.Group()
     enemies = pygame.sprite.Group()
+    player_group = pygame.sprite.GroupSingle()
     camera = Camera(screen)
-    level = Level(load_image('maps\\test_lvl_3.png'), 'test_lvl_3', screen, camera)
+
+    level = Level(load_image('maps\\test_lvl.png'), 'test_lvl', screen, camera)
     player = Player(load_image('player\\idle\\idle_r.png'), level.get_player_spawn(),
                     False,  # TODO: ВЕРНУТЬ СЮЖЕТНЫЙ МАРКЕР level.get_story_mode()
-                    all_sprites, camera)
+                    all_sprites, camera, player_group)
 
-    Enemy(pygame.Surface((10, 50)), level.get_player_spawn(), life_counter, player,
+    bullet_icon = load_image('bullet\\bullet.png')
+    Enemy(pygame.Surface((10, 50)), level.get_player_spawn(), life_counter, player, bullet_icon,
           all_sprites, enemies, camera)
 
     player.import_anims(load_image)
     camera.set_max((level.image.get_width(), level.image.get_height()))
     camera.get_map_image(level.image)
 
-    [Enemy(pygame.Surface((10, 50)), i, life_counter, player,
-           all_sprites, enemies, camera) for i in level.get_enemies_pos()]
     # Здесь создаются враги в позициях, полученных из level.get_enemies_pos()
     # Я пока что выключил сюжетный режим для игрока и сделал бесконечный прыжок для упрощения рабочего процесса
-
     clock = pygame.time.Clock()
     shoot_timer = pygame.time.get_ticks()
     while run:
@@ -67,16 +67,17 @@ def start_game(run=True):
                 run = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1 and pygame.time.get_ticks() - shoot_timer > 500:
-                    Bullet(load_image('bullet\\bullet.png'), player.map_rect.center, player.last_keys, 'player',
+                    Bullet(bullet_icon, player.map_rect.center, player.last_keys, 'player',
                            all_sprites, camera)
                     shoot_timer = pygame.time.get_ticks()
-            # if event.type == pygame.KEYDOWN:
-            #     if event.key == pygame.K_ESCAPE:
-            #         pause.set_last_frame(screen.copy())
-            #         menu_open = pause.start()
-            #         if menu_open:
-            #             return 'menu'
-        all_sprites.update(tiles=level.tiles, enemies=enemies)
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pause.set_last_frame(screen.copy())
+                    menu_open = pause.start()
+                    if menu_open:
+                        return 'menu'
+            print(player.kills, player.elapsed_time)
+        all_sprites.update(tiles=level.tiles, enemies=enemies, player=player_group)
         screen.fill((0, 0, 0))
         camera.draw_offset(player)
         pygame.display.flip()

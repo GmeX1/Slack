@@ -109,13 +109,15 @@ class Player(Entity):
         super().__init__(image, pos, *groups)
         self.animation_speed = 0.15 if walk else 0.15 * 4
         self.walk_mode = walk
-        self.last_keys = 100
+        self.last_keys = 1
         self.map_rect = pygame.Rect(pos, (25, self.rect.height))
+        self.kills = 0
 
         self.start_time = time.time()
+        self.start_tike = pygame.time.get_ticks()
         self.elapsed_time = 0
-        self.last_shift_time = 0
 
+        self.last_shift_time = 0
         self.base_speed = 8 if not self.walk_mode else 2
         self.speed = self.base_speed
         self.jump_power = -6 if not self.walk_mode else -3
@@ -128,37 +130,46 @@ class Player(Entity):
             'walk_l': make_anim_list(load_func, 'player\\walk', True)
         }
 
+    def kill_enemy(self):
+        self.kills += 1
+
     def get_keys(self):
         keys = pygame.key.get_pressed()
         if (keys[pygame.K_a] or keys[pygame.K_LEFT]) and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
-            if self.last_keys == pygame.K_d:
+            if self.last_keys == 1:
                 self.update_anim('left')
                 self.direction.x = -1
-            if self.last_keys == pygame.K_a:
+            if self.last_keys == -1:
                 self.update_anim('right')
                 self.direction.x = 1
         elif keys[pygame.K_a] or keys[pygame.K_LEFT]:
             self.update_anim('left')
             self.direction.x = -1
-            self.last_keys = pygame.K_a
+            self.last_keys = -1
         elif keys[pygame.K_d] or keys[pygame.K_RIGHT]:
             self.update_anim('right')
             self.direction.x = 1
-            self.last_keys = pygame.K_d
+            self.last_keys = 1
         else:
-            if self.last_keys == pygame.K_a:
+            if self.last_keys == -1:
                 self.update_anim('idle_l')
-            elif self.last_keys == pygame.K_d:
+            elif self.last_keys == 1:
                 self.update_anim('idle_r')
             self.direction.x = 0
+
         if keys[pygame.K_UP] or keys[pygame.K_w] or keys[pygame.K_SPACE]:
             self.jump()
+
         if keys[pygame.K_LSHIFT] and time.time() - self.last_shift_time > 2:
-            if self.direction.x == 1:
-                self.map_rect.x *= 1.5
-            elif self.direction.x == -1:
-                self.map_rect.x /= 1.5
+            if self.last_keys == 1:
+                self.direction.x = 1
+            elif self.last_keys == -1:
+                self.direction.x = -1
+                # Настроить под анимцию
+            self.speed += 100
             self.last_shift_time = time.time()
+        elif time.time() - self.last_shift_time < 2:
+            self.speed = self.base_speed
 
     def update(self, **kwargs):
         self.map_rect.x += self.direction.x * self.speed
@@ -166,6 +177,7 @@ class Player(Entity):
         self.direction.y += 0.2
         self.map_rect.y += self.direction.y
         self.check_vertical_collisions(kwargs['tiles'])
+        self.elapsed_time = (pygame.time.get_ticks() - self.start_tike) // 1000
         self.get_keys()
 
 
@@ -177,25 +189,28 @@ class Bullet(Entity):
         # TODO: Кажется, придётся либо пулю делать больше, либо делать трассировку попадания :) Если скорость пули
         #  высокая, то она с большим шансом просто "перешагнёт" врага и коллизии формально не будет
         self.base_speed = 10
-        self.direction.x = -1 if last < 100 else 1
+        self.direction.x = last
 
     def kill_entity(self, enemies):
         if pygame.sprite.spritecollide(self, enemies, False):
             if pygame.sprite.spritecollide(self, enemies, True, collided=pygame.sprite.collide_mask):
                 self.kill()
+                return True
+        return False
 
     def update(self, **kwargs):
         self.map_rect.x += self.base_speed * self.direction.x
         # Поскольку у пули анимаций нет, то просто переписываем координаты с прямоугольника карты на прямоугольник
         # изображения. С врагом пока что аналогично, потому что там тоже нет анимаций (пока что)
         self.rect.x = self.map_rect.x
-
         if self.check_for == 'enemy':
-            self.kill_entity(kwargs['enemies'])
-        else:
-            pass  # Если враги будут стрелять, то пригодится
+            answer = self.kill_entity(kwargs['enemies'])
+            if answer:
+                kwargs['player'].sprite.kill_enemy()
 
-        self.kill_entity(kwargs['enemies'])
+        else:
+            self.kill_entity(kwargs['player'])
+
         self.check_horizontal_collisions(kwargs['tiles'])
         # Я думаю, что возможен вариант диагональных пуль. Потом посмотрим, как пойдёт, но было бы неплохо такое сделать
         self.check_vertical_collisions(kwargs['tiles'])
@@ -204,7 +219,7 @@ class Bullet(Entity):
 
 
 class Enemy(Entity):
-    def __init__(self, image, pos, live, player, *groups):
+    def __init__(self, image, pos, live, player, built_icon, *groups):
         super().__init__(image, pos, *groups)
         self.image.fill((255, 0, 0))
         self.mask = pygame.mask.from_surface(self.image)
@@ -212,12 +227,16 @@ class Enemy(Entity):
 
         self.base_speed = 2
         self.speed = self.base_speed
-
+        self.built_icon = built_icon
         self.standing_time = 0
         self.choose_direction()
         self.time_to_change_direction = random.uniform(1, 4)
         self.live = live
         self.player = player
+
+        self.shoot_timer = pygame.time.get_ticks()
+
+        self.last_direction_x = 1
 
     def choose_direction(self):
         self.direction.x = random.choice([-1, 1])
@@ -226,12 +245,12 @@ class Enemy(Entity):
         self.standing_time += 1 / 100
         if self.standing_time >= self.time_to_change_direction:
             self.choose_direction()
-            self.standing_time = 2
+            self.standing_time = 1
             self.time_to_change_direction = random.uniform(1, 4)
-            self.chech_player()
+            self.check_player()
 
-    def chech_player(self):
-        if abs(self.player.map_rect.x - self.map_rect.x) < 250:
+    def check_player(self):
+        if abs(self.player.map_rect.x - self.map_rect.x) < 250 and (self.player.map_rect.y + 50) >= self.map_rect.y:
             if self.player.map_rect.x < self.map_rect.x:
                 self.direction.x = -1
                 self.standing_time = 0
@@ -242,16 +261,33 @@ class Enemy(Entity):
                 self.standing_time = 0
                 return True
 
+    def check_last_direction(self):
+        if self.direction.x == 1:
+            self.last_direction_x = 1
+        elif self.direction.x == -1:
+            self.last_direction_x = -1
+
+    def enemy_attack(self):
+        if abs(self.player.map_rect.x - self.map_rect.x) < 50 and (self.player.map_rect.y + 50) >= self.map_rect.y \
+                and pygame.time.get_ticks() - self.shoot_timer > 400:
+            Bullet(self.built_icon, self.map_rect.center, self.last_direction_x, 'enemy', *self.groups())
+
+            self.shoot_timer = pygame.time.get_ticks()
+
     def update(self, **kwargs):
-        if self.chech_player():
+        self.check_last_direction()
+        self.enemy_attack()
+
+        if self.check_player():
             self.map_rect.x += self.direction.x * self.speed
             self.rect.x = self.map_rect.x
             self.check_horizontal_collisions(kwargs['tiles'])
 
             self.direction.y += 0.2
             self.map_rect.y += self.direction.y
-            self.rect.x = self.map_rect.x
+            self.rect.y = self.map_rect.y
             self.check_vertical_collisions(kwargs['tiles'])
+
         else:
             self.check_time_event()
             self.map_rect.x += self.direction.x * self.speed
@@ -260,8 +296,8 @@ class Enemy(Entity):
 
             self.direction.y += 0.2
             self.map_rect.y += self.direction.y
-            self.rect.x = self.map_rect.x
+            self.rect.y = self.map_rect.y
             self.check_vertical_collisions(kwargs['tiles'])
 
-            if self.collisions['left'] or self.collisions['right']:
-                self.direction.x = 0
+            # if self.collisions['left'] or self.collisions['right']:
+            #     self.direction.x = 0
