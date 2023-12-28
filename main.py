@@ -9,6 +9,7 @@ from menu_class import Menu, Pause
 from scripts import database_create, show_fps
 from UI_class import UI
 
+pygame.mixer.pre_init(44100, -16, 1, 512)
 pygame.init()
 pygame.display.set_caption('Slack')
 info = pygame.display.Info()
@@ -41,18 +42,21 @@ def load_image(name, colorkey=None):
 
 def start_game():
     music_volume = db.cursor().execute('SELECT value FROM settings WHERE name="music_volume"').fetchone()[0] / 100
-    pygame.mixer.music.load('music\\level_1\\main_layer.wav')
+    pygame.mixer.music.load('data\\music\\level_1\\main_layer.wav')
     layer_1 = pygame.mixer.Channel(0)  # TODO: Завернуть в класс
+    layer_1_sound = pygame.mixer.Sound('data\\music\\level_1\\layer_1.wav')
     layer_1.set_volume(0)
     layer_2 = pygame.mixer.Channel(1)
+    layer_2_sound = pygame.mixer.Sound('data\\music\\level_1\\layer_2.wav')
     layer_2.set_volume(0)
     layer_3 = pygame.mixer.Channel(2)
+    layer_3_sound = pygame.mixer.Sound('data\\music\\level_1\\layer_3.wav')
     layer_3.set_volume(0)
 
     pygame.mixer_music.play(-1)
-    layer_1.play(pygame.mixer.Sound('music\\level_1\\layer_1.wav'), -1)
-    layer_2.play(pygame.mixer.Sound('music\\level_1\\layer_2.wav'), -1)
-    layer_3.play(pygame.mixer.Sound('music\\level_1\\layer_3.wav'), -1)
+    layer_1.play(layer_1_sound, -1)
+    layer_2.play(layer_2_sound, -1)
+    layer_3.play(layer_3_sound, -1)
 
     all_sprites = pygame.sprite.Group()
     camera = Camera(screen)
@@ -95,10 +99,11 @@ def start_game():
                     hp += 1
                     ui.set_hp(hp)
                     ui.add_rage(25)
-                    # if layer_1.get_volume() < music_volume:
-                    #     layer_1.set_volume(layer_1.get_volume() + music_volume / 10)
-                    # elif layer_1.get_volume() > music_volume:
-                    #     layer_1.set_volume(music_volume)
+                    layer_3.set_volume(0.05)
+        if 0 < layer_3.get_volume() < music_volume:
+            layer_3.set_volume(layer_3.get_volume() + music_volume / 10)
+        elif layer_3.get_volume() > music_volume:
+            layer_3.set_volume(music_volume)
 
         all_sprites.update(tiles=level.tiles)
         screen.fill((0, 0, 0))
