@@ -66,7 +66,7 @@ def start_game(run=True):
             if event.type == pygame.QUIT:
                 run = False
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1 and pygame.time.get_ticks() - shoot_timer > 500:
+                if event.button == 3 and pygame.time.get_ticks() - shoot_timer > 500:
                     Bullet(bullet_icon, player.map_rect.center, player.last_keys, 'player',
                            all_sprites, camera)
                     shoot_timer = pygame.time.get_ticks()
@@ -76,7 +76,6 @@ def start_game(run=True):
                     menu_open = pause.start()
                     if menu_open:
                         return 'menu'
-            print(player.kills, player.elapsed_time)
         all_sprites.update(tiles=level.tiles, enemies=enemies, player=player_group)
         screen.fill((0, 0, 0))
         camera.draw_offset(player)

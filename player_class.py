@@ -112,6 +112,7 @@ class Player(Entity):
         self.last_keys = 1
         self.map_rect = pygame.Rect(pos, (25, self.rect.height))
         self.kills = 0
+        self.hp = 5
 
         self.start_time = time.time()
         self.start_tike = pygame.time.get_ticks()
@@ -191,11 +192,21 @@ class Bullet(Entity):
         self.base_speed = 10
         self.direction.x = last
 
-    def kill_entity(self, enemies):
-        if pygame.sprite.spritecollide(self, enemies, False):
-            if pygame.sprite.spritecollide(self, enemies, True, collided=pygame.sprite.collide_mask):
-                self.kill()
-                return True
+    def kill_entity(self, entities):
+        if pygame.sprite.spritecollide(self, entities, False):
+            if entities.__class__ is pygame.sprite.GroupSingle:
+                if pygame.sprite.spritecollide(self, entities, False, collided=pygame.sprite.collide_mask):
+                    entities.sprite.hp -= 1
+                    if entities.sprite.hp == 0:
+                        entities.sprite.kill()
+                        self.kill()
+                        return True
+                    self.kill()
+                    return False
+            else:
+                if pygame.sprite.spritecollide(self, entities, True, collided=pygame.sprite.collide_mask):
+                    self.kill()
+                    return True
         return False
 
     def update(self, **kwargs):
@@ -250,7 +261,7 @@ class Enemy(Entity):
             self.check_player()
 
     def check_player(self):
-        if abs(self.player.map_rect.x - self.map_rect.x) < 250 and (self.player.map_rect.y + 50) >= self.map_rect.y:
+        if abs(self.player.map_rect.x - self.map_rect.x) < 300 and (self.player.map_rect.y + 50) >= self.map_rect.y:
             if self.player.map_rect.x < self.map_rect.x:
                 self.direction.x = -1
                 self.standing_time = 0
@@ -299,5 +310,5 @@ class Enemy(Entity):
             self.rect.y = self.map_rect.y
             self.check_vertical_collisions(kwargs['tiles'])
 
-            # if self.collisions['left'] or self.collisions['right']:
-            #     self.direction.x = 0
+            # if self.collisions['left'] or self.collisions['right']: TODO: Обнулять таймер, если стена
+            #     self.standing_time = float('inf')
