@@ -1,6 +1,7 @@
 import pygame
 from scripts import make_anim_list
 from numpy import random
+import time
 
 
 class Entity(pygame.sprite.Sprite):
@@ -19,7 +20,7 @@ class Entity(pygame.sprite.Sprite):
 
         self.base_speed = placeholder
         self.speed = self.base_speed
-        self.jump_power = placeholder
+        self.jump_power = 10
         self.direction = pygame.math.Vector2(0, 0)
         self.collisions = {
             'left': False,
@@ -111,6 +112,10 @@ class Player(Entity):
         self.last_keys = 100
         self.map_rect = pygame.Rect(pos, (25, self.rect.height))
 
+        self.start_time = time.time()
+        self.elapsed_time = 0
+        self.last_shift_time = 0
+
         self.base_speed = 8 if not self.walk_mode else 2
         self.speed = self.base_speed
         self.jump_power = -6 if not self.walk_mode else -3
@@ -148,6 +153,12 @@ class Player(Entity):
             self.direction.x = 0
         if keys[pygame.K_UP] or keys[pygame.K_w] or keys[pygame.K_SPACE]:
             self.jump()
+        if keys[pygame.K_LSHIFT] and time.time() - self.last_shift_time > 2:
+            if self.direction.x == 1:
+                self.map_rect.x *= 1.5
+            elif self.direction.x == -1:
+                self.map_rect.x /= 1.5
+            self.last_shift_time = time.time()
 
     def update(self, **kwargs):
         self.map_rect.x += self.direction.x * self.speed
@@ -155,6 +166,7 @@ class Player(Entity):
         self.direction.y += 0.2
         self.map_rect.y += self.direction.y
         self.check_vertical_collisions(kwargs['tiles'])
+        self.elapsed_time = int(time.time() - self.start_time)
         self.get_keys()
 
 
@@ -163,7 +175,7 @@ class Bullet(Entity):
         super().__init__(image, pos, *groups)
         self.check_for = 'player' if initiator == 'enemy' else 'enemy'
         self.map_rect = self.rect.copy()
-        self.base_speed = 5
+        self.base_speed = 50
         self.direction.x = -1 if last < 100 else 1
 
     def kill_entity(self, enemies):
@@ -204,29 +216,53 @@ class Enemy(Entity):
         self.time_to_change_direction = random.uniform(1, 4)
         self.live = live
         self.player = player
+        self.attack = None
+        self.last_direction_x = 0
 
     def choose_direction(self):
         self.direction.x = random.choice([-1, 1])
 
     def check_time_event(self):
+        # Не виду смысла подвязывать настоящее время, т.к если игрок свернёт игру, то получитсья баг
         self.standing_time += 1 / 100
         if self.standing_time >= self.time_to_change_direction:
             self.choose_direction()
-            self.standing_time = 0
+            self.standing_time = 2
             self.time_to_change_direction = random.uniform(1, 4)
-            self.direction.x = random.choice([-1, 0, 1])
+            self.chech_player()
+
+    def chech_player(self):
+        if abs(self.player.map_rect.x - self.map_rect.x) < 250:
+            if self.player.map_rect.x < self.map_rect.x:
+                self.direction.x = -1
+                self.standing_time = 0
+                return True
+
+            elif self.player.map_rect.x > self.map_rect.x:
+                self.direction.x = 1
+                self.standing_time = 0
+                return True
 
     def update(self, **kwargs):
-        self.check_time_event()
+        if self.chech_player():
+            self.map_rect.x += self.direction.x * self.speed
+            self.rect.x = self.map_rect.x
+            self.check_horizontal_collisions(kwargs['tiles'])
 
-        self.map_rect.x += self.direction.x * self.speed
-        self.rect.x = self.map_rect.x  # Причина та же, что с пулей
-        self.check_horizontal_collisions(kwargs['tiles'])
+            self.direction.y += 0.2
+            self.map_rect.y += self.direction.y
+            self.rect.x = self.map_rect.x
+            self.check_vertical_collisions(kwargs['tiles'])
+        else:
+            self.check_time_event()
+            self.map_rect.x += self.direction.x * self.speed
+            self.rect.x = self.map_rect.x
+            self.check_horizontal_collisions(kwargs['tiles'])
 
-        self.direction.y += 0.2
-        self.map_rect.y += self.direction.y
-        self.rect.x = self.map_rect.x  # Причина та же, что с пулей
-        self.check_vertical_collisions(kwargs['tiles'])
+            self.direction.y += 0.2
+            self.map_rect.y += self.direction.y
+            self.rect.x = self.map_rect.x
+            self.check_vertical_collisions(kwargs['tiles'])
 
-        if self.collisions['left'] or self.collisions['right']:
-            self.direction.x = 0
+            if self.collisions['left'] or self.collisions['right']:
+                self.direction.x = 0
