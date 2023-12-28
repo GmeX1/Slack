@@ -1,24 +1,26 @@
 import pygame
 from scripts import make_anim_list
+from numpy import random
+import time
 
 
-class Player(pygame.sprite.Sprite):
-    def __init__(self, image, pos, walk=False, *groups):
+class Entity(pygame.sprite.Sprite):
+    def __init__(self, image, pos, *groups):
         super().__init__(*groups)
+        placeholder = 1  # Это типа вместо None, чтобы вставить хотя бы какие-то цифры
+
         self.frames = dict()
         self.cur_frame = 0
-        self.animation_speed = 0.15 if walk else 0.15 * 4
-        self.walk_mode = walk
-        self.last_keys = None
+        self.animation_speed = placeholder
 
         self.image = image
         self.rect = self.image.get_rect().move(pos)
-        self.map_rect = pygame.Rect(pos, (25, self.rect.height))  # Статичная коробка - всё-таки лучший вариант
+        self.map_rect = pygame.Rect(pos, (placeholder, self.rect.height))
         self.mask = pygame.mask.from_surface(self.image)
 
-        self.base_speed = 8 if not self.walk_mode else 2
+        self.base_speed = placeholder
         self.speed = self.base_speed
-        self.jump_power = -6 if not self.walk_mode else -3
+        self.jump_power = placeholder
         self.direction = pygame.math.Vector2(0, 0)
         self.collisions = {
             'left': False,
@@ -30,10 +32,10 @@ class Player(pygame.sprite.Sprite):
 
     def import_anims(self, load_func):
         self.frames = {
-            'idle_r': load_func('player\\idle\\idle_r.png'),
-            'idle_l': load_func('player\\idle\\idle_l.png'),
-            'walk_r': make_anim_list(load_func, 'player\\walk'),
-            'walk_l': make_anim_list(load_func, 'player\\walk', True)
+            'idle_r': load_func(),
+            'idle_l': load_func(None),
+            'walk_r': make_anim_list(load_func, None),
+            'walk_l': make_anim_list(load_func, None, True)
         }
 
     def jump(self):
@@ -91,38 +93,222 @@ class Player(pygame.sprite.Sprite):
         elif name == 'idle_l':
             self.image = self.frames['idle_l']
 
+        # TODO: посмотри на ходьюу влево и на ходьбу вправо. Вроде я отцентровал X, но это вообще не помогло(
         self.rect = self.image.get_rect(midbottom=self.map_rect.midbottom)
+
+    def update(self, **kwargs):
+        self.map_rect.x += self.direction.x * self.speed
+        self.check_horizontal_collisions(kwargs['tiles'])
+        self.direction.y += 0.2
+        self.map_rect.y += self.direction.y
+        self.check_vertical_collisions(kwargs['tiles'])
+
+
+class Player(Entity):
+    def __init__(self, image, pos, walk=False, *groups):
+        super().__init__(image, pos, *groups)
+        self.animation_speed = 0.15 if walk else 0.15 * 4
+        self.walk_mode = walk
+        self.last_keys = 1
+        self.map_rect = pygame.Rect(pos, (25, self.rect.height))
+        self.kills = 0
+        self.hp = 5
+
+        self.start_time = time.time()
+        self.start_tike = pygame.time.get_ticks()
+        self.elapsed_time = 0
+
+        self.last_shift_time = 0
+        self.base_speed = 8 if not self.walk_mode else 2
+        self.speed = self.base_speed
+        self.jump_power = -6 if not self.walk_mode else -3
+
+    def import_anims(self, load_func):
+        self.frames = {
+            'idle_r': load_func('player\\idle\\idle_r.png'),
+            'idle_l': load_func('player\\idle\\idle_l.png'),
+            'walk_r': make_anim_list(load_func, 'player\\walk'),
+            'walk_l': make_anim_list(load_func, 'player\\walk', True)
+        }
+
+    def kill_enemy(self):
+        self.kills += 1
 
     def get_keys(self):
         keys = pygame.key.get_pressed()
         if (keys[pygame.K_a] or keys[pygame.K_LEFT]) and (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
-            if self.last_keys == pygame.K_d:
+            if self.last_keys == 1:
                 self.update_anim('left')
                 self.direction.x = -1
-            if self.last_keys == pygame.K_a:
+            if self.last_keys == -1:
                 self.update_anim('right')
                 self.direction.x = 1
         elif keys[pygame.K_a] or keys[pygame.K_LEFT]:
             self.update_anim('left')
             self.direction.x = -1
-            self.last_keys = pygame.K_a
+            self.last_keys = -1
         elif keys[pygame.K_d] or keys[pygame.K_RIGHT]:
             self.update_anim('right')
             self.direction.x = 1
-            self.last_keys = pygame.K_d
+            self.last_keys = 1
         else:
-            if self.last_keys == pygame.K_a:
+            if self.last_keys == -1:
                 self.update_anim('idle_l')
-            elif self.last_keys == pygame.K_d:
+            elif self.last_keys == 1:
                 self.update_anim('idle_r')
             self.direction.x = 0
+
         if keys[pygame.K_UP] or keys[pygame.K_w] or keys[pygame.K_SPACE]:
             self.jump()
 
-    def update(self, tiles):
+        if keys[pygame.K_LSHIFT] and time.time() - self.last_shift_time > 2:
+            if self.last_keys == 1:
+                self.direction.x = 1
+            elif self.last_keys == -1:
+                self.direction.x = -1
+                # Настроить под анимцию
+            self.speed += 100
+            self.last_shift_time = time.time()
+        elif time.time() - self.last_shift_time < 2:
+            self.speed = self.base_speed
+
+    def update(self, **kwargs):
         self.map_rect.x += self.direction.x * self.speed
-        self.check_horizontal_collisions(tiles)
+        self.check_horizontal_collisions(kwargs['tiles'])
         self.direction.y += 0.2
         self.map_rect.y += self.direction.y
-        self.check_vertical_collisions(tiles)
+        self.check_vertical_collisions(kwargs['tiles'])
+        self.elapsed_time = (pygame.time.get_ticks() - self.start_tike) // 1000
         self.get_keys()
+
+
+class Bullet(Entity):
+    def __init__(self, image, pos, last, initiator, *groups):
+        super().__init__(image, pos, *groups)
+        self.check_for = 'player' if initiator == 'enemy' else 'enemy'
+        self.map_rect = self.rect.copy()
+        # TODO: Кажется, придётся либо пулю делать больше, либо делать трассировку попадания :) Если скорость пули
+        #  высокая, то она с большим шансом просто "перешагнёт" врага и коллизии формально не будет
+        self.base_speed = 10
+        self.direction.x = last
+
+    def kill_entity(self, entities):
+        if pygame.sprite.spritecollide(self, entities, False):
+            if entities.__class__ is pygame.sprite.GroupSingle:
+                if pygame.sprite.spritecollide(self, entities, False, collided=pygame.sprite.collide_mask):
+                    entities.sprite.hp -= 1
+                    if entities.sprite.hp == 0:
+                        entities.sprite.kill()
+                        self.kill()
+                        return True
+                    self.kill()
+                    return False
+            else:
+                if pygame.sprite.spritecollide(self, entities, True, collided=pygame.sprite.collide_mask):
+                    self.kill()
+                    return True
+        return False
+
+    def update(self, **kwargs):
+        self.map_rect.x += self.base_speed * self.direction.x
+        # Поскольку у пули анимаций нет, то просто переписываем координаты с прямоугольника карты на прямоугольник
+        # изображения. С врагом пока что аналогично, потому что там тоже нет анимаций (пока что)
+        self.rect.x = self.map_rect.x
+        if self.check_for == 'enemy':
+            answer = self.kill_entity(kwargs['enemies'])
+            if answer:
+                kwargs['player'].sprite.kill_enemy()
+
+        else:
+            self.kill_entity(kwargs['player'])
+
+        self.check_horizontal_collisions(kwargs['tiles'])
+        # Я думаю, что возможен вариант диагональных пуль. Потом посмотрим, как пойдёт, но было бы неплохо такое сделать
+        self.check_vertical_collisions(kwargs['tiles'])
+        if self.collisions['right'] or self.collisions['left']:
+            self.kill()
+
+
+class Enemy(Entity):
+    def __init__(self, image, pos, live, player, built_icon, *groups):
+        super().__init__(image, pos, *groups)
+        self.image.fill((255, 0, 0))
+        self.mask = pygame.mask.from_surface(self.image)
+        self.map_rect = self.rect.copy()
+
+        self.base_speed = 2
+        self.speed = self.base_speed
+        self.built_icon = built_icon
+        self.standing_time = 0
+        self.choose_direction()
+        self.time_to_change_direction = random.uniform(1, 4)
+        self.live = live
+        self.player = player
+
+        self.shoot_timer = pygame.time.get_ticks()
+
+        self.last_direction_x = 1
+
+    def choose_direction(self):
+        self.direction.x = random.choice([-1, 1])
+
+    def check_time_event(self):
+        self.standing_time += 1 / 100
+        if self.standing_time >= self.time_to_change_direction:
+            self.choose_direction()
+            self.standing_time = 1
+            self.time_to_change_direction = random.uniform(1, 4)
+            self.check_player()
+
+    def check_player(self):
+        if abs(self.player.map_rect.x - self.map_rect.x) < 300 and (self.player.map_rect.y + 50) >= self.map_rect.y:
+            if self.player.map_rect.x < self.map_rect.x:
+                self.direction.x = -1
+                self.standing_time = 0
+                return True
+
+            elif self.player.map_rect.x > self.map_rect.x:
+                self.direction.x = 1
+                self.standing_time = 0
+                return True
+
+    def check_last_direction(self):
+        if self.direction.x == 1:
+            self.last_direction_x = 1
+        elif self.direction.x == -1:
+            self.last_direction_x = -1
+
+    def enemy_attack(self):
+        if abs(self.player.map_rect.x - self.map_rect.x) < 50 and (self.player.map_rect.y + 50) >= self.map_rect.y \
+                and pygame.time.get_ticks() - self.shoot_timer > 400:
+            Bullet(self.built_icon, self.map_rect.center, self.last_direction_x, 'enemy', *self.groups())
+
+            self.shoot_timer = pygame.time.get_ticks()
+
+    def update(self, **kwargs):
+        self.check_last_direction()
+        self.enemy_attack()
+
+        if self.check_player():
+            self.map_rect.x += self.direction.x * self.speed
+            self.rect.x = self.map_rect.x
+            self.check_horizontal_collisions(kwargs['tiles'])
+
+            self.direction.y += 0.2
+            self.map_rect.y += self.direction.y
+            self.rect.y = self.map_rect.y
+            self.check_vertical_collisions(kwargs['tiles'])
+
+        else:
+            self.check_time_event()
+            self.map_rect.x += self.direction.x * self.speed
+            self.rect.x = self.map_rect.x
+            self.check_horizontal_collisions(kwargs['tiles'])
+
+            self.direction.y += 0.2
+            self.map_rect.y += self.direction.y
+            self.rect.y = self.map_rect.y
+            self.check_vertical_collisions(kwargs['tiles'])
+
+            # if self.collisions['left'] or self.collisions['right']: TODO: Обнулять таймер, если стена
+            #     self.standing_time = float('inf')

@@ -4,7 +4,7 @@ import os
 import sys
 
 from level_class import Level, Camera
-from player_class import Player
+from player_class import Player, Bullet, Enemy
 from menu_class import Menu, Pause
 from scripts import database_create, show_fps
 from UI_class import UI
@@ -39,13 +39,18 @@ def load_image(name, colorkey=None):
     return image
 
 
-def start_game():
+def start_game(run=True):
+    bullet_icon = load_image('bullet\\bullet.png')
+
     all_sprites = pygame.sprite.Group()
+    enemies = pygame.sprite.Group()
+    player_group = pygame.sprite.GroupSingle()
     camera = Camera(screen)
+
     level = Level(load_image('maps\\test_lvl.png'), 'test_lvl', screen, camera)
     player = Player(load_image('player\\idle\\idle_r.png'), level.get_player_spawn(),
                     level.get_story_mode(),
-                    all_sprites, camera)
+                    all_sprites, camera, player_group)
     player.import_anims(load_image)
     camera.set_max((level.image.get_width(), level.image.get_height()))
     camera.get_map_image(level.image)
@@ -55,13 +60,21 @@ def start_game():
 
     hp = 5  # Условно, пока не подключусь к хп врага из другой ветки
     ui.set_hp(hp)
+    # [Enemy(pygame.Surface((10, 50)), i, life_counter, player, bullet_icon,
+    #        all_sprites, enemies, camera) for i in level.get_enemies_pos()]
 
     run = True
     clock = pygame.time.Clock()
+    shoot_timer = pygame.time.get_ticks()
     while run:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 3 and pygame.time.get_ticks() - shoot_timer > 500:
+                    Bullet(bullet_icon, player.map_rect.center, player.last_keys, 'player',
+                           all_sprites, camera)
+                    shoot_timer = pygame.time.get_ticks()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     pause.set_last_frame(screen.copy())
@@ -79,8 +92,7 @@ def start_game():
                     hp += 1
                     ui.set_hp(hp)
                     ui.add_rage(25)
-
-        all_sprites.update(tiles=level.tiles)
+        all_sprites.update(tiles=level.tiles, enemies=enemies, player=player_group)
         screen.fill((0, 0, 0))
         camera.draw_offset(player)
 

@@ -1,5 +1,5 @@
-import os
 import pygame
+import os
 from scripts import split_image
 from tile_class import Tile
 
@@ -13,12 +13,14 @@ class Level:
         # Подгрузка тайлов из файла имя_карты.tiles, либо свежая генерация с последующим сохранением в файл.
         # Синим цветом на маске обозначена точка спавна игрока.
         # Жёлтым цветом на маске обозначен режим игры (сюжетный или основной)
+        # Красным цветом на маске обозначены враги
         if not os.path.isfile(os.path.join(*['data', 'maps'], f'{level_name}.tiles')):
             print('По какой-то причине тайлы отсутствуют, генерация...')
             rects = split_image(f'data/maps/{level_name}_mask.png')
             open(f'data/maps/{level_name}.tiles', mode='w').write(str(rects))
         else:
             rects = eval(open(f'data/maps/{level_name}.tiles', mode='r').read())
+
         self.player_spawn_pos = rects.pop(rects.index(list(filter(lambda x: x[0] == (0, 0, 255, 255), rects))[0]))
         self.player_spawn_pos = self.player_spawn_pos[1][:2]
 
@@ -30,7 +32,16 @@ class Level:
         else:
             self.story_mode = False
 
+        self.enemies_pos = list(filter(lambda x: x[0] == (255, 0, 0, 255), rects))
+        if self.enemies_pos:
+            self.enemies_pos = list(map(lambda x: rects.pop(rects.index(x))[1][:2], self.enemies_pos))
+        else:
+            self.enemies_pos = None
+
         [Tile(i[0], *i[1], self.tiles, camera) for i in rects]
+
+    def get_enemies_pos(self):
+        return self.enemies_pos
 
     def get_story_mode(self):
         return self.story_mode
