@@ -14,6 +14,7 @@ class UI:
             'images': make_anim_list(load_func, 'icons\\hp_no_fire')
         }
         self.hp_amount = 0
+        self.kills = 0
         self.rage_value = 0
         self.blink = 0
         self.deplete = False

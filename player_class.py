@@ -39,8 +39,8 @@ class Entity(pygame.sprite.Sprite):
         }
 
     def jump(self):
-        if self.collisions['bottom']:
-            self.direction.y = self.jump_power
+        # if self.collisions['bottom']: # TODO: Расскомментить, тесты.
+        self.direction.y = self.jump_power
 
     def check_horizontal_collisions(self, tiles):
         for sprite in tiles.sprites():
@@ -230,7 +230,7 @@ class Bullet(Entity):
 
 
 class Enemy(Entity):
-    def __init__(self, image, pos, live, player, built_icon, *groups):
+    def __init__(self, image, pos, player, built_icon, *groups):
         super().__init__(image, pos, *groups)
         self.image.fill((255, 0, 0))
         self.mask = pygame.mask.from_surface(self.image)
@@ -242,7 +242,6 @@ class Enemy(Entity):
         self.standing_time = 0
         self.choose_direction()
         self.time_to_change_direction = random.uniform(1, 4)
-        self.live = live
         self.player = player
 
         self.shoot_timer = pygame.time.get_ticks()
@@ -280,7 +279,7 @@ class Enemy(Entity):
 
     def enemy_attack(self):
         if abs(self.player.map_rect.x - self.map_rect.x) < 50 and (self.player.map_rect.y + 50) >= self.map_rect.y \
-                and pygame.time.get_ticks() - self.shoot_timer > 400:
+                and pygame.time.get_ticks() - self.shoot_timer > 600:
             Bullet(self.built_icon, self.map_rect.center, self.last_direction_x, 'enemy', *self.groups())
 
             self.shoot_timer = pygame.time.get_ticks()

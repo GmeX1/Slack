@@ -39,7 +39,7 @@ def load_image(name, colorkey=None):
     return image
 
 
-def start_game(run=True):
+def start_game():
     bullet_icon = load_image('bullet\\bullet.png')
 
     all_sprites = pygame.sprite.Group()
@@ -49,19 +49,19 @@ def start_game(run=True):
 
     level = Level(load_image('maps\\test_lvl.png'), 'test_lvl', screen, camera)
     player = Player(load_image('player\\idle\\idle_r.png'), level.get_player_spawn(),
-                    level.get_story_mode(),
+                    False,  # TODO: Переделать, тесты (level.get_story_mode())
                     all_sprites, camera, player_group)
     player.import_anims(load_image)
     camera.set_max((level.image.get_width(), level.image.get_height()))
     camera.get_map_image(level.image)
 
+    [Enemy(pygame.Surface((10, 50)), i, player, bullet_icon,
+           all_sprites, enemies, camera) for i in level.get_enemies_pos()]
+
     cur = db.cursor()
     fps_switch = cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()[0][0]
 
-    hp = 5  # Условно, пока не подключусь к хп врага из другой ветки
-    ui.set_hp(hp)
-    # [Enemy(pygame.Surface((10, 50)), i, life_counter, player, bullet_icon,
-    #        all_sprites, enemies, camera) for i in level.get_enemies_pos()]
+    ui.set_hp(player.hp)
 
     run = True
     clock = pygame.time.Clock()
@@ -84,18 +84,25 @@ def start_game(run=True):
                     fps_switch = cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()[0][0]
                 if event.key == pygame.K_q:
                     ui.activate_rage()
-                if event.key == pygame.K_h:  # Для тестов
-                    if hp > 0:
-                        hp -= 1
+                if event.key == pygame.K_h:  # TODO: Убрать. Для тестов.
+                    if player.hp > 0:
+                        player.hp -= 1
                         ui.remove_hp()
                 if event.key == pygame.K_j:
-                    hp += 1
-                    ui.set_hp(hp)
+                    player.hp += 1
+                    ui.set_hp(player.hp)
                     ui.add_rage(25)
         all_sprites.update(tiles=level.tiles, enemies=enemies, player=player_group)
         screen.fill((0, 0, 0))
         camera.draw_offset(player)
 
+        if player.hp < ui.hp_amount:
+            ui.remove_hp()
+        if player.hp == 0:
+            return 'restart'
+        if player.kills > ui.kills:
+            ui.add_rage(50)  # TODO: Сделать коэффициент
+            ui.kills += 1
         ui.draw()
 
         if fps_switch:
@@ -117,5 +124,6 @@ if __name__ == '__main__':
     menu.start()
     answer = start_game()
     while answer:
-        menu.start()
+        if answer == 'menu':
+            menu.start()
         answer = start_game()
