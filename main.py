@@ -40,6 +40,20 @@ def load_image(name, colorkey=None):
 
 
 def start_game():
+    music_volume = db.cursor().execute('SELECT value FROM settings WHERE name="music_volume"').fetchone()[0] / 100
+    pygame.mixer.music.load('music\\level_1\\main_layer.wav')
+    layer_1 = pygame.mixer.Channel(0)  # TODO: Завернуть в класс
+    layer_1.set_volume(0)
+    layer_2 = pygame.mixer.Channel(1)
+    layer_2.set_volume(0)
+    layer_3 = pygame.mixer.Channel(2)
+    layer_3.set_volume(0)
+
+    pygame.mixer_music.play(-1)
+    layer_1.play(pygame.mixer.Sound('music\\level_1\\layer_1.wav'), -1)
+    layer_2.play(pygame.mixer.Sound('music\\level_1\\layer_2.wav'), -1)
+    layer_3.play(pygame.mixer.Sound('music\\level_1\\layer_3.wav'), -1)
+
     all_sprites = pygame.sprite.Group()
     camera = Camera(screen)
     level = Level(load_image('maps\\test_lvl.png'), 'test_lvl', screen, camera)
@@ -69,6 +83,8 @@ def start_game():
                     if menu_open:
                         return 'menu'
                     fps_switch = cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()[0][0]
+                    music_volume = cur.execute(
+                        'SELECT value FROM settings WHERE name="music_volume"').fetchone()[0] / 100
                 if event.key == pygame.K_q:
                     ui.activate_rage()
                 if event.key == pygame.K_h:  # Для тестов
@@ -79,6 +95,10 @@ def start_game():
                     hp += 1
                     ui.set_hp(hp)
                     ui.add_rage(25)
+                    # if layer_1.get_volume() < music_volume:
+                    #     layer_1.set_volume(layer_1.get_volume() + music_volume / 10)
+                    # elif layer_1.get_volume() > music_volume:
+                    #     layer_1.set_volume(music_volume)
 
         all_sprites.update(tiles=level.tiles)
         screen.fill((0, 0, 0))

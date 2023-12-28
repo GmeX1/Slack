@@ -8,7 +8,7 @@ from scripts import show_fps
 # Pycharm считает, что я не использую cos и sin, но они используются в переменной func у класса SparkParticle
 
 
-class Menu:
+class Menu:  # TODO: Звуки обновляются только после кнопки "назад"
     def __init__(self, surface, db):
         self.db = db
         self.cur = db.cursor()
@@ -71,6 +71,8 @@ class Menu:
             sys_exit()
         elif button.text == 'НАЗАД':
             self.db.commit()
+            pygame.mixer.music.set_volume(
+                self.cur.execute('SELECT value FROM settings WHERE name="music_volume"').fetchone()[0] / 100)
             self.generate_menu()
         elif type(button) == ButtonSlider:
             if button.get_click_zone() == 'left':
@@ -80,6 +82,10 @@ class Menu:
             self.fps_switch = self.cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()[0][0]
 
     def start(self):
+        pygame.mixer.music.load('data\\music\\menu_test.wav')
+        pygame.mixer.music.set_volume(
+            self.cur.execute('SELECT value FROM settings WHERE name="music_volume"').fetchone()[0] / 100)
+        pygame.mixer.music.play(-1)
         particles = pygame.sprite.Group()
         self.show = True
         clock = pygame.time.Clock()
@@ -115,6 +121,8 @@ class Menu:
                 show_fps(self.surface, clock)
             pygame.display.flip()
             clock.tick(100)
+        if not self.show:
+            pygame.mixer.music.fadeout(100)
 
 
 class Pause(Menu):  # TODO: накладывается один фпс на другой
@@ -147,6 +155,8 @@ class Pause(Menu):  # TODO: накладывается один фпс на др
             self.call_menu = True
         elif button.text == 'НАЗАД':
             self.db.commit()
+            pygame.mixer.music.set_volume(
+                self.cur.execute('SELECT value FROM settings WHERE name="music_volume"').fetchone()[0] / 100)
             self.generate_menu()
         elif type(button) == ButtonSlider:
             if button.get_click_zone() == 'left':
