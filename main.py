@@ -8,6 +8,7 @@ from player_class import Player, Bullet, Enemy
 from menu_class import Menu, Pause
 from scripts import database_create, show_fps
 from UI_class import UI
+from scripts import generate_tiles
 
 pygame.init()
 pygame.display.set_caption('Slack')
@@ -122,6 +123,7 @@ if __name__ == '__main__':
     pause = Pause(screen, db)
     menu = Menu(screen, db)
     menu.start()
+    generate_tiles()
     answer = start_game()
     while answer:
         if answer == 'menu':

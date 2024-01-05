@@ -26,6 +26,23 @@ def database_create():
     return database
 
 
+def generate_tiles():
+    for path, _, files in os.walk('data\\maps'):
+        for file in files:
+            if file.endswith('.png') and '_mask' not in file:
+                filename = file.split(".")[0]
+                if not os.path.isfile(os.path.join(path, f'{filename}.tiles')):
+                    rects = split_image(f'data/maps/{filename}_mask.png')
+                    open(f'data/maps/{filename}.tiles', mode='w').write(str(rects))
+
+
+def delete_all_tiles():
+    for path, _, files in os.walk('data\\maps'):
+        for file in files:
+            if file.endswith('.tiles'):
+                os.remove(os.path.join(path, file))
+
+
 def make_anim_list(load_func, path, flip=False):
     """Функция для получения списка поверхностей из определённой директории"""
     anim_list = []
