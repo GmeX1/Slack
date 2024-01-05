@@ -3,7 +3,7 @@ import pygame
 import os
 import sys
 
-from level_class import Level, Camera
+from small_logic_classes import Level, Camera
 from player_class import Player, Bullet, Enemy
 from menu_class import Menu, Pause
 from scripts import database_create, show_fps

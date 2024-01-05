@@ -1,7 +1,9 @@
-import pygame
 import os
+
+import pygame
+
+# from numpy.random import randint
 from scripts import split_image
-from tile_class import Tile
 
 
 class Level:
@@ -112,4 +114,20 @@ class Camera(pygame.sprite.Group):
             else:
                 pos = sprite.rect.topleft - self.offset
             if sprite.__class__ != Tile:
-                self.surface.blit(sprite.image, pos)
+                # Небольшая проверка для оптимизации (Culling)
+                if (pos[0] < self.surface.get_width() and pos[1] < self.surface.get_height()
+                        and pos[0] + sprite.image.get_width() > -1 and pos[1] + sprite.image.get_height() > -1):
+                    self.surface.blit(sprite.image, pos)
+
+
+class Tile(pygame.sprite.Sprite):
+    def __init__(self, color, left, top, right, bottom, *groups):
+        super().__init__(*groups)
+        self.image = pygame.Surface((right - left, bottom - top))
+        self.image.fill(color)
+        # self.image.fill((randint(0, 256), randint(0, 256), randint(0, 256)))
+        # Заполнение выше необязательно. Необходимо для удобной визуальной отладки
+        self.rect = self.image.get_rect(topleft=(left, top))
+
+    def update(self, xy):
+        self.rect = self.rect.move(xy)
