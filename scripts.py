@@ -1,5 +1,6 @@
 import os
 import sqlite3
+
 import pygame
 from PIL import Image, ImageDraw
 from numpy.random import randint
@@ -24,6 +25,13 @@ def database_create():
         );''')
     database.commit()
     return database
+
+
+def time_convert(msecs):
+    hours, remaining = divmod(msecs, 3600000)
+    minutes, remaining = divmod(remaining, 60000)
+    seconds, remaining = divmod(remaining, 1000)
+    return f'{hours:02d}:{minutes:02d}:{seconds:02d}'
 
 
 def generate_tiles():

@@ -208,7 +208,7 @@ class Bullet(Entity):
             if entities.__class__ is pygame.sprite.GroupSingle:
                 if pygame.sprite.spritecollide(self, entities, False, collided=pygame.sprite.collide_mask):
                     entities.sprite.damage(1)
-                    if entities.sprite.hp == 0:
+                    if entities.sprite.hp <= 0:
                         entities.sprite.kill()
                         self.kill()
                         return True

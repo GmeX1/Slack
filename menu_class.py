@@ -1,7 +1,9 @@
 from sys import exit as sys_exit
+
 import pygame
 from numpy import cos, pi, sin
-from numpy.random import choice, randint, uniform
+from numpy.random import randint, uniform
+
 from scripts import show_fps
 
 
@@ -17,7 +19,8 @@ class Menu:
         self.show = True
         self.surface = surface
         self.font = pygame.font.Font('data\\fonts\\better-vcr.ttf', 72)
-        self.settings_font = pygame.font.Font('data\\fonts\\better-vcr.ttf', 64)
+        self.medium_font = pygame.font.Font('data\\fonts\\better-vcr.ttf', 64)
+        self.small_font = pygame.font.Font('data\\fonts\\better-vcr.ttf', 52)
         self.buttons = list()
         self.generate_menu()
 
@@ -38,7 +41,7 @@ class Menu:
                 self.buttons[i] = ButtonSlider(
                     self.buttons[i],
                     self.db,
-                    self.settings_font,
+                    self.medium_font,
                     self.buttons[i],
                     (self.surface.get_width() / 2, self.surface.get_height() / 10 * (i + 4)),
                 )
@@ -46,7 +49,7 @@ class Menu:
                 self.buttons[i] = ButtonSlider(
                     self.buttons[i],
                     self.db,
-                    self.settings_font,
+                    self.medium_font,
                     self.buttons[i],
                     (self.surface.get_width() / 2, self.surface.get_height() / 10 * (i + 4)),
                     True,
@@ -54,7 +57,7 @@ class Menu:
                 )
             else:
                 self.buttons[i] = Button(
-                    self.settings_font,
+                    self.medium_font,
                     self.buttons[i],
                     (self.surface.get_width() / 2, self.surface.get_height() / 10 * (i + 4)),
                     False if i != len(self.buttons) - 1 else True
@@ -204,11 +207,16 @@ class Pause(Menu):  # TODO: накладывается один фпс на др
 
 class DeathScreen(Menu):  # TODO: Сделать анимацию покрасивее
     def __init__(self, surface, db):
-        super().__init__(surface, db)
-        self.last_frame = self.surface.copy()
+        self.last_frame = surface.copy()
         self.call_menu = False
         self.fade_time = 3000
         self.start_tick = pygame.time.get_ticks()
+
+        self.kills = 0
+        self.max_combo = 0
+        self.live_time = '00:00:00'
+
+        super().__init__(surface, db)
 
     def set_last_frame(self, screen):
         self.last_frame = screen
@@ -216,13 +224,34 @@ class DeathScreen(Menu):  # TODO: Сделать анимацию покраси
         self.start_tick = pygame.time.get_ticks()
 
     def generate_menu(self):
-        self.buttons = ['ВОЗРОДИТЬСЯ', 'Я СДАЮСЬ']
-        for i in range(len(self.buttons)):
-            self.buttons[i] = Button(
-                self.font,
-                self.buttons[i],
-                (self.surface.get_width() / 2, self.surface.get_height() / 8 * (i + 3))
-            )
+        self.buttons = ['ВЫ УМЕРЛИ.', f'Врагов убито: {self.kills}', f'Времени прожито: {self.live_time}',
+                        f'Максимальное комбо: {self.max_combo}', 'ВОЗРОДИТЬСЯ', 'Я СДАЮСЬ']
+        self.buttons[0] = Button(
+            self.font,
+            self.buttons[0],
+            (self.surface.get_width() / 2, self.surface.get_height() / 8),
+            False
+        )
+        for i in range(1, len(self.buttons)):
+            if i < 4:
+                self.buttons[i] = Button(
+                    self.small_font,
+                    self.buttons[i],
+                    (self.surface.get_width() / 2, self.surface.get_height() / 12 * (i + 3)),
+                    False
+                )
+            else:
+                self.buttons[i] = Button(
+                    self.medium_font,
+                    self.buttons[i],
+                    (self.surface.get_width() / 2, self.surface.get_height() / 8 * (i + 2))
+                )
+
+    def set_stats(self, kills, time, combo):
+        self.kills = kills
+        self.live_time = time
+        self.max_combo = combo
+        self.generate_menu()
 
     def start(self):
         self.fps_switch = self.cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()[0][0]
@@ -233,9 +262,6 @@ class DeathScreen(Menu):  # TODO: Сделать анимацию покраси
         while self.show:
             mouse_click_pos = (-1, -1)
             for event in pygame.event.get():
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        self.show = False
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     mouse_click_pos = event.pos
 
@@ -291,7 +317,7 @@ class SparkParticle(pygame.sprite.Sprite):
 
         self.amplitude = uniform(0.5, 1.5)
         self.phase = uniform(-1.5, 1.5)
-        self.func = eval(choice(['sin', 'cos'], size=1)[0])
+        self.func = sin if randint(0, 2) else cos
 
         self.half_width = self.rect.width / 2
         self.half_height = self.rect.height / 2

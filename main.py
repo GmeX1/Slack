@@ -6,7 +6,7 @@ import sys
 from small_logic_classes import Level, Camera
 from player_class import Player, Bullet, Enemy
 from menu_class import Menu, Pause, DeathScreen
-from scripts import database_create, show_fps
+from scripts import database_create, show_fps, time_convert
 from UI_class import UI
 from scripts import generate_tiles
 
@@ -98,8 +98,9 @@ def start_game():
 
         if player.hp < ui.hp_amount:
             ui.remove_hp()
-        if player.hp == 0:
+        if player.hp <= 0:
             death_screen.set_last_frame(screen.copy())
+            death_screen.set_stats(player.kills, time_convert(pygame.time.get_ticks()), 1)
             menu_open = death_screen.start()
             if menu_open:
                 return 'menu'
@@ -124,9 +125,9 @@ if __name__ == '__main__':
     else:
         db = sqlite3.connect('data\\db\\gamedata.db')
     ui = UI(screen, screen.get_size(), load_image)
-    death_screen = DeathScreen(screen, db)
-    pause = Pause(screen, db)
     menu = Menu(screen, db)
+    pause = Pause(screen, db)
+    death_screen = DeathScreen(screen, db)
     menu.start()
     generate_tiles()
     answer = start_game()
