@@ -5,7 +5,7 @@ import sys
 
 from small_logic_classes import Level, Camera
 from player_class import Player, Bullet, Enemy
-from menu_class import Menu, Pause
+from menu_class import Menu, Pause, DeathScreen
 from scripts import database_create, show_fps
 from UI_class import UI
 from scripts import generate_tiles
@@ -99,7 +99,12 @@ def start_game():
         if player.hp < ui.hp_amount:
             ui.remove_hp()
         if player.hp == 0:
-            return 'restart'
+            death_screen.set_last_frame(screen.copy())
+            menu_open = death_screen.start()
+            if menu_open:
+                return 'menu'
+            else:
+                return 'restart'
         if player.kills > ui.kills:
             ui.add_rage(50)  # TODO: Сделать коэффициент
             ui.kills += 1
@@ -119,6 +124,7 @@ if __name__ == '__main__':
     else:
         db = sqlite3.connect('data\\db\\gamedata.db')
     ui = UI(screen, screen.get_size(), load_image)
+    death_screen = DeathScreen(screen, db)
     pause = Pause(screen, db)
     menu = Menu(screen, db)
     menu.start()
@@ -127,4 +133,6 @@ if __name__ == '__main__':
     while answer:
         if answer == 'menu':
             menu.start()
-        answer = start_game()
+        ui = UI(screen, screen.get_size(), load_image)
+        death_screen = DeathScreen(screen, db)
+        answer = start_game()  # Пока что игра просто перезапускается, ибо нет контрольных точек
