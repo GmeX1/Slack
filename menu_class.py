@@ -7,20 +7,22 @@ from numpy.random import randint, uniform
 from scripts import show_fps
 
 
-# Pycharm считает, что я не использую cos и sin, но они используются в переменной func у класса SparkParticle
-
-
 class Menu:
     def __init__(self, surface, db):
         self.db = db
         self.cur = db.cursor()
-        self.fps_switch = self.cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()[0][0]
+        self.fps_switch = self.cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()
+        if not self.fps_switch:
+            self.cur.execute(f'INSERT INTO settings (name, value) VALUES("show_fps", 0)')
+            self.db.commit()
+        else:
+            self.fps_switch = self.fps_switch[0][0]
 
         self.show = True
         self.surface = surface
-        self.font = pygame.font.Font('data\\fonts\\better-vcr.ttf', 72)
-        self.medium_font = pygame.font.Font('data\\fonts\\better-vcr.ttf', 64)
-        self.small_font = pygame.font.Font('data\\fonts\\better-vcr.ttf', 52)
+        self.font_big = pygame.font.Font('data\\fonts\\better-vcr.ttf', 80)
+        self.font_medium = pygame.font.Font('data\\fonts\\better-vcr.ttf', 64)
+        self.font_small = pygame.font.Font('data\\fonts\\better-vcr.ttf', 52)
         self.buttons = list()
         self.generate_menu()
 
@@ -28,7 +30,7 @@ class Menu:
         self.buttons = ['НАЧАТЬ ИГРУ', 'ПРОДОЛЖИТЬ', 'НАСТРОЙКИ', 'ВЫЙТИ']
         for i in range(len(self.buttons)):
             self.buttons[i] = Button(
-                self.font,
+                self.font_big,
                 self.buttons[i],
                 (self.surface.get_width() / 2, self.surface.get_height() / 8 * (i + 3))
             )
@@ -41,7 +43,7 @@ class Menu:
                 self.buttons[i] = ButtonSlider(
                     self.buttons[i],
                     self.db,
-                    self.medium_font,
+                    self.font_medium,
                     self.buttons[i],
                     (self.surface.get_width() / 2, self.surface.get_height() / 10 * (i + 4)),
                 )
@@ -49,7 +51,7 @@ class Menu:
                 self.buttons[i] = ButtonSlider(
                     self.buttons[i],
                     self.db,
-                    self.medium_font,
+                    self.font_medium,
                     self.buttons[i],
                     (self.surface.get_width() / 2, self.surface.get_height() / 10 * (i + 4)),
                     True,
@@ -57,7 +59,7 @@ class Menu:
                 )
             else:
                 self.buttons[i] = Button(
-                    self.medium_font,
+                    self.font_medium,
                     self.buttons[i],
                     (self.surface.get_width() / 2, self.surface.get_height() / 10 * (i + 4)),
                     False if i != len(self.buttons) - 1 else True
@@ -111,7 +113,7 @@ class Menu:
                 if mouse_click_pos != (-1, -1) and button.click(mouse_click_pos):
                     if self.handle_click(button) == 'close':
                         self.surface.fill((0, 0, 0))
-                        render = self.font.render('ЗАГРУЗКА...', True, (255, 255, 255))
+                        render = self.font_big.render('ЗАГРУЗКА...', True, (255, 255, 255))
                         self.surface.blit(
                             render,
                             (self.surface.get_width() / 2 - render.get_width() / 2,
@@ -145,7 +147,7 @@ class Pause(Menu):  # TODO: накладывается один фпс на др
         self.buttons = ['ПРОДОЛЖИТЬ', 'НАСТРОЙКИ', 'ВЫЙТИ В МЕНЮ']
         for i in range(len(self.buttons)):
             self.buttons[i] = Button(
-                self.font,
+                self.font_big,
                 self.buttons[i],
                 (self.surface.get_width() / 2, self.surface.get_height() / 8 * (i + 3))
             )
@@ -227,7 +229,7 @@ class DeathScreen(Menu):  # TODO: Сделать анимацию покраси
         self.buttons = ['ВЫ УМЕРЛИ.', f'Врагов убито: {self.kills}', f'Времени прожито: {self.live_time}',
                         f'Максимальное комбо: {self.max_combo}', 'ВОЗРОДИТЬСЯ', 'Я СДАЮСЬ']
         self.buttons[0] = Button(
-            self.font,
+            self.font_big,
             self.buttons[0],
             (self.surface.get_width() / 2, self.surface.get_height() / 8),
             False
@@ -235,14 +237,14 @@ class DeathScreen(Menu):  # TODO: Сделать анимацию покраси
         for i in range(1, len(self.buttons)):
             if i < 4:
                 self.buttons[i] = Button(
-                    self.small_font,
+                    self.font_small,
                     self.buttons[i],
                     (self.surface.get_width() / 2, self.surface.get_height() / 12 * (i + 3)),
                     False
                 )
             else:
                 self.buttons[i] = Button(
-                    self.medium_font,
+                    self.font_medium,
                     self.buttons[i],
                     (self.surface.get_width() / 2, self.surface.get_height() / 8 * (i + 2))
                 )
