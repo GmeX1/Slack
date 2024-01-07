@@ -246,7 +246,7 @@ class DeathScreen(Menu):  # TODO: Сделать анимацию покраси
                 self.buttons[i] = Button(
                     self.font_medium,
                     self.buttons[i],
-                    (self.surface.get_width() / 2, self.surface.get_height() / 8 * (i + 2))
+                    (self.surface.get_width() / 2, self.surface.get_height() / 8 * (i + 1.5))
                 )
 
     def set_stats(self, kills, time, combo):
