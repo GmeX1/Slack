@@ -1,6 +1,6 @@
-# import time
 import pygame
 from numpy import random
+from particles import BloodParticle
 from scripts import make_anim_list
 
 
@@ -18,6 +18,7 @@ class Entity(pygame.sprite.Sprite):
         self.map_rect = pygame.Rect(pos, (placeholder, self.rect.height))
         self.mask = pygame.mask.from_surface(self.image)
 
+        self.hp = 5
         self.base_speed = placeholder
         self.speed = self.base_speed
         self.jump_power = placeholder
@@ -113,12 +114,11 @@ class Player(Entity):
         self.map_rect = pygame.Rect(pos, (25, self.rect.height))
 
         self.kills = 0
-        self.hp = 5
-
         self.inv_time = 0
-        self.start_tick = pygame.time.get_ticks()
 
+        self.start_tick = pygame.time.get_ticks()
         self.last_shift_time = 0
+
         self.base_speed = 8 if not self.walk_mode else 2
         self.speed = self.base_speed
         self.jump_power = -6 if not self.walk_mode else -3
@@ -213,11 +213,16 @@ class Bullet(Entity):
                         self.kill()
                         return True
                     self.kill()
-                    return False
             else:
-                if pygame.sprite.spritecollide(self, entities, True, collided=pygame.sprite.collide_mask):
+                for entity in pygame.sprite.spritecollide(self, entities, False, collided=pygame.sprite.collide_mask):
+                    entity.hp -= 1
+                    print(entity.hp)
+                    if entity.hp <= 0:
+                        [BloodParticle(entity.rect.center, *self.groups()) for _ in range(random.randint(4, 13))]
+                        entity.kill()
+                        self.kill()
+                        return True
                     self.kill()
-                    return True
         return False
 
     def update(self, **kwargs):
@@ -242,10 +247,11 @@ class Bullet(Entity):
 class Enemy(Entity):
     def __init__(self, image, pos, player, built_icon, *groups):
         super().__init__(image, pos, *groups)
-        self.image.fill((255, 0, 0))
+        self.image.fill((0, 0, 255))
         self.mask = pygame.mask.from_surface(self.image)
         self.map_rect = self.rect.copy()
 
+        self.hp = 2
         self.base_speed = 2
         self.speed = self.base_speed
         self.built_icon = built_icon

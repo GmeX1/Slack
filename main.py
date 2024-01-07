@@ -1,14 +1,15 @@
-import sqlite3
-import pygame
 import os
+import sqlite3
 import sys
 
-from small_logic_classes import Level, Camera
-from player_class import Player, Bullet, Enemy
-from menu_class import Menu, Pause, DeathScreen
-from scripts import database_create, show_fps, time_convert
+import pygame
+from numpy.random import randint
 from UI_class import UI
-from scripts import generate_tiles
+from menu_class import DeathScreen, Menu, Pause
+from player_class import Bullet, Enemy, Player
+from scripts import database_create, generate_tiles, show_fps, time_convert
+from small_logic_classes import Camera, Level
+from particles import BloodParticle
 
 pygame.init()
 pygame.display.set_caption('Slack')
