@@ -53,7 +53,6 @@ def start_game():
                     False,  # TODO: Переделать, тесты (level.get_story_mode())
                     all_sprites, camera, player_group)
     player.import_anims(load_image)
-    camera.set_max((level.image.get_width(), level.image.get_height()))
     camera.get_map_image(level.image)
 
     [Enemy(pygame.Surface((10, 50)), i, player, bullet_icon,

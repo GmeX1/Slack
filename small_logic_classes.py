@@ -56,15 +56,19 @@ class Camera(pygame.sprite.Group):
     def __init__(self, surface):
         super().__init__()
         self.surface = surface
+        self.pre_surface = pygame.Surface(self.surface.get_size())
+
         self.offset = pygame.math.Vector2(0, 0)
         self.maximum = (float('inf'), float('inf'))
+
+        self.resize_coef = 1
         self.map_image = None
         self.map_rect = None
         self.borders = {
-            'left': self.surface.get_width() / 6,
-            'right': self.surface.get_width() / 6 * 5,
-            'top': self.surface.get_height() / 6,
-            'bottom': self.surface.get_height() / 6 * 5
+            'left': self.surface.get_width() / 4,
+            'right': self.surface.get_width() / 4 * 3,
+            'top': self.surface.get_height() / 4,
+            'bottom': self.surface.get_height() / 4 * 3
         }
         self.pos_rect = pygame.Rect(
             self.borders['left'],
@@ -73,12 +77,26 @@ class Camera(pygame.sprite.Group):
             self.borders['bottom'] - self.borders['top']
         )
 
-    def set_max(self, maximum):
-        self.maximum = maximum
-
     def get_map_image(self, image):
         self.map_image = image
         self.map_rect = self.map_image.get_rect()
+        if self.map_image.get_height() < self.surface.get_height():
+            self.resize_coef = self.surface.get_height() / self.map_image.get_height()
+            if self.resize_coef > 2:
+                self.resize_coef = 2
+            self.borders = {
+                'left': self.surface.get_width() * self.resize_coef / 4,
+                'right': self.surface.get_width() * self.resize_coef / 4 * 3,
+                'top': self.surface.get_height() * self.resize_coef / 4,
+                'bottom': self.surface.get_height() * self.resize_coef / 4 * 3
+            }
+            self.pos_rect = pygame.Rect(
+                self.borders['left'],
+                self.borders['top'],
+                self.borders['right'] - self.borders['left'],
+                self.borders['bottom'] - self.borders['top']
+            )
+        self.maximum = (image.get_width() * self.resize_coef, image.get_height() * self.resize_coef)
 
     def draw_offset(self, player):
         if player.map_rect.left < self.pos_rect.left:
@@ -106,7 +124,7 @@ class Camera(pygame.sprite.Group):
 
         if self.map_image:
             pos = self.map_rect.topleft - self.offset
-            self.surface.blit(self.map_image, pos)
+            self.pre_surface.blit(self.map_image, pos)
 
         for sprite in self.sprites():
             if hasattr(sprite, 'map_rect'):
@@ -117,7 +135,18 @@ class Camera(pygame.sprite.Group):
                 # Небольшая проверка для оптимизации (Culling)
                 if (pos[0] < self.surface.get_width() and pos[1] < self.surface.get_height()
                         and pos[0] + sprite.image.get_width() > -1 and pos[1] + sprite.image.get_height() > -1):
-                    self.surface.blit(sprite.image, pos)
+                    self.pre_surface.blit(sprite.image, pos)
+
+        # Если комната слишком маленькая, то будет производиться ресайз
+        if self.resize_coef != 1:
+            rescaled_surface = pygame.transform.scale(
+                self.pre_surface,
+                (self.pre_surface.get_width() * self.resize_coef, self.pre_surface.get_height() * self.resize_coef)
+            )
+            rescaled_rect = rescaled_surface.get_rect()
+            self.surface.blit(rescaled_surface, rescaled_rect)
+        else:
+            self.surface.blit(self.pre_surface, (0, 0))
 
 
 class Tile(pygame.sprite.Sprite):
