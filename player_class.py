@@ -1,7 +1,7 @@
+# import time
 import pygame
-from scripts import make_anim_list
 from numpy import random
-import time
+from scripts import make_anim_list
 
 
 class Entity(pygame.sprite.Sprite):
@@ -80,18 +80,18 @@ class Entity(pygame.sprite.Sprite):
         if name == 'right':
             self.cur_frame += self.animation_speed
             self.cur_frame %= len(self.frames['walk_r'])
-            self.image = self.frames['walk_r'][int(self.cur_frame)]
+            self.image = self.frames['walk_r'][int(self.cur_frame)].copy()
         elif name == 'left':
             self.cur_frame += self.animation_speed
             self.cur_frame %= len(self.frames['walk_l'])
-            self.image = self.frames['walk_l'][int(self.cur_frame)]
+            self.image = self.frames['walk_l'][int(self.cur_frame)].copy()
         else:
             self.cur_frame = 0
 
         if name == 'idle_r':
-            self.image = self.frames['idle_r']
+            self.image = self.frames['idle_r'].copy()
         elif name == 'idle_l':
-            self.image = self.frames['idle_l']
+            self.image = self.frames['idle_l'].copy()
 
         # TODO: посмотри на ходьюу влево и на ходьбу вправо. Вроде я отцентровал X, но это вообще не помогло(
         self.rect = self.image.get_rect(midbottom=self.map_rect.midbottom)
@@ -111,12 +111,12 @@ class Player(Entity):
         self.walk_mode = walk
         self.last_keys = 1
         self.map_rect = pygame.Rect(pos, (25, self.rect.height))
+
         self.kills = 0
         self.hp = 5
 
-        self.start_time = time.time()
-        self.start_tike = pygame.time.get_ticks()
-        self.elapsed_time = 0
+        self.inv_time = 0
+        self.start_tick = pygame.time.get_ticks()
 
         self.last_shift_time = 0
         self.base_speed = 8 if not self.walk_mode else 2
@@ -130,6 +130,11 @@ class Player(Entity):
             'walk_r': make_anim_list(load_func, 'player\\walk'),
             'walk_l': make_anim_list(load_func, 'player\\walk', True)
         }
+
+    def damage(self, value):
+        if self.inv_time <= 0:
+            self.hp -= value
+            self.inv_time = 1500  # Полторы секунды неуязвимости при получении урона
 
     def kill_enemy(self):
         self.kills += 1
@@ -161,15 +166,15 @@ class Player(Entity):
         if keys[pygame.K_UP] or keys[pygame.K_w] or keys[pygame.K_SPACE]:
             self.jump()
 
-        if keys[pygame.K_LSHIFT] and time.time() - self.last_shift_time > 2:
+        if keys[pygame.K_LSHIFT] and pygame.time.get_ticks() - self.last_shift_time > 2000:
             if self.last_keys == 1:
                 self.direction.x = 1
             elif self.last_keys == -1:
                 self.direction.x = -1
                 # Настроить под анимцию
             self.speed += 100
-            self.last_shift_time = time.time()
-        elif time.time() - self.last_shift_time < 2:
+            self.last_shift_time = pygame.time.get_ticks()
+        elif pygame.time.get_ticks() - self.last_shift_time <= 2000:
             self.speed = self.base_speed
 
     def update(self, **kwargs):
@@ -178,8 +183,14 @@ class Player(Entity):
         self.direction.y += 0.2
         self.map_rect.y += self.direction.y
         self.check_vertical_collisions(kwargs['tiles'])
-        self.elapsed_time = (pygame.time.get_ticks() - self.start_tike) // 1000
         self.get_keys()
+        if self.inv_time > 0:
+            self.inv_time -= pygame.time.get_ticks() - self.start_tick
+            if self.inv_time <= 0:
+                self.image.set_alpha(255)
+            else:
+                self.image.set_alpha(100 + (1500 - self.inv_time) / (1500 / 125))
+        self.start_tick = pygame.time.get_ticks()
 
 
 class Bullet(Entity):
@@ -196,7 +207,7 @@ class Bullet(Entity):
         if pygame.sprite.spritecollide(self, entities, False):
             if entities.__class__ is pygame.sprite.GroupSingle:
                 if pygame.sprite.spritecollide(self, entities, False, collided=pygame.sprite.collide_mask):
-                    entities.sprite.hp -= 1
+                    entities.sprite.damage(1)
                     if entities.sprite.hp == 0:
                         entities.sprite.kill()
                         self.kill()
@@ -218,7 +229,6 @@ class Bullet(Entity):
             answer = self.kill_entity(kwargs['enemies'])
             if answer:
                 kwargs['player'].sprite.kill_enemy()
-
         else:
             self.kill_entity(kwargs['player'])
 
