@@ -89,14 +89,12 @@ def start_game():
                         player.hp -= 1
                         ui.remove_hp()
                 if event.key == pygame.K_j:
-                    player.hp += 1
-                    ui.set_hp(player.hp)
-                    ui.add_rage(25)
-                    ui.combo += 1
+                    ui.kill(5)
         all_sprites.update(tiles=level.tiles, enemies=enemies, player=player_group)
         screen.fill((0, 0, 0))
         camera.draw_offset(player)
 
+        # Синхронизация действий игрока с UI
         if player.hp < ui.hp_amount:
             ui.remove_hp()
         if player.hp <= 0:
@@ -109,6 +107,11 @@ def start_game():
                 return 'restart'
         if player.kills > ui.kills:
             ui.kill(50)  # TODO: Сделать коэффициент
+        if ui.combo_timer:
+            if player.combo != ui.combo:
+                player.combo = ui.combo
+        else:
+            player.combo = 0
         ui.draw()
 
         if fps_switch:

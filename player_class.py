@@ -1,5 +1,6 @@
 import pygame
 from numpy import random
+
 from particles import BloodParticle
 from scripts import make_anim_list
 
@@ -115,13 +116,21 @@ class Player(Entity):
 
         self.kills = 0
         self.inv_time = 0
+        self.combo = 0
 
         self.start_tick = pygame.time.get_ticks()
         self.last_shift_time = 0
+        self.dashing = False
 
         self.base_speed = 8 if not self.walk_mode else 2
         self.speed = self.base_speed
-        self.jump_power = -6 if not self.walk_mode else -3
+        self.base_jump_power = -6 if not self.walk_mode else -3
+        self.jump_power = self.base_jump_power
+
+    def boost_combo(self):
+        mult = self.combo if self.combo < 6 else 7
+        self.speed = self.base_speed + self.base_speed * mult * 0.1
+        self.jump_power = self.base_jump_power + self.base_jump_power * mult * 0.1
 
     def import_anims(self, load_func):
         self.frames = {
@@ -173,11 +182,22 @@ class Player(Entity):
                 self.direction.x = -1
                 # Настроить под анимцию
             self.speed += 100
+            self.dashing = True
             self.last_shift_time = pygame.time.get_ticks()
         elif pygame.time.get_ticks() - self.last_shift_time <= 2000:
             self.speed = self.base_speed
+            self.dashing = False
 
     def update(self, **kwargs):
+        if not self.dashing:
+            if self.combo:
+                if self.combo > 1:
+                    self.boost_combo()
+            else:
+                self.speed = self.base_speed
+                self.jump_power = self.base_jump_power
+                self.combo = -1
+
         self.map_rect.x += self.direction.x * self.speed
         self.check_horizontal_collisions(kwargs['tiles'])
         self.direction.y += 0.2

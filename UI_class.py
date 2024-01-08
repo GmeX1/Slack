@@ -33,7 +33,7 @@ class UI:
         self.kills += 1
         self.add_rage(rage)
         self.combo += 1
-        if self.combo > 1:
+        if self.combo:
             self.blink_combo = 255
             self.combo_timer = pygame.time.get_ticks()
 
@@ -106,17 +106,18 @@ class UI:
             self.blink_rage -= 5
 
         # КОМБО
-        if pygame.time.get_ticks() - self.combo_timer > 5000:
-            self.combo_timer = 0
-            self.combo = 0
+        if self.combo:
+            if pygame.time.get_ticks() - self.combo_timer > 5000:
+                self.combo_timer = 0
+                self.combo = 0
 
-        if self.combo_timer:  # TODO: Тень
-            text = self.combo_font.render(f'{self.combo}X', True,
-                                          (200, self.blink_combo, self.blink_combo))
-            self.surface.blit(
-                text,
-                (self.screen.get_width() - text.get_width() - 10, 10)
-            )
+            if self.combo > 1:  # TODO: Тень
+                text = self.combo_font.render(f'{self.combo}X', True,
+                                              (200, self.blink_combo, self.blink_combo))
+                self.surface.blit(
+                    text,
+                    (self.screen.get_width() - text.get_width() - 10, 10)
+                )
 
         if self.blink_combo > 0:
             self.blink_combo -= 5
