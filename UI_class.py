@@ -1,4 +1,5 @@
 import pygame
+
 from scripts import make_anim_list
 
 
@@ -7,6 +8,7 @@ class UI:
         self.screen = screen
         self.surface = pygame.Surface(size, pygame.SRCALPHA)
         self.surface.convert_alpha()
+
         self.hp_icon = load_func('icons\\hp_bigger.png')
         self.destroy_anim = {
             'draw': False,
@@ -14,12 +16,26 @@ class UI:
             'images': make_anim_list(load_func, 'icons\\hp_no_fire')
         }
         self.hp_amount = 0
+
+        self.combo_font = pygame.font.Font('data\\fonts\\facon.otf', 100)
+        self.combo = 0
+        self.combo_timer = 0
+        self.blink_combo = 0
         self.kills = 0
+
         self.rage_value = 0
-        self.blink = 0
+        self.blink_rage = 0
         self.deplete = False
         self.overlay = pygame.transform.smoothscale(load_func('overlay\\vignette.png'), size)
         self.overlay_opacity = 0
+
+    def kill(self, rage):
+        self.kills += 1
+        self.add_rage(rage)
+        self.combo += 1
+        if self.combo > 1:
+            self.blink_combo = 255
+            self.combo_timer = pygame.time.get_ticks()
 
     def set_hp(self, amount):
         self.hp_amount = amount
@@ -29,7 +45,7 @@ class UI:
         self.rage_value += value
         if self.rage_value >= 100:
             self.rage_value = 100
-            self.blink = 255
+            self.blink_rage = 255
 
     def activate_rage(self):
         if self.rage_value == 100:
@@ -79,15 +95,31 @@ class UI:
             self.surface.blit(self.hp_icon, (10 * (i + 1) + self.hp_icon.get_width() * i, 10))
 
         # РЕЙДЖ БАР
-        if self.blink > 0:
-            self.blink -= 5
-
         pygame.draw.rect(
             self.surface,
-            (255, self.blink, self.blink),
+            (255, self.blink_rage, self.blink_rage),
             (10, self.hp_icon.get_height() + 20, self.rage_value * 2, 15)
         )
         pygame.draw.rect(self.surface, (255, 255, 255), (10, self.hp_icon.get_height() + 20, 200, 15), 2)
+
+        if self.blink_rage > 0:
+            self.blink_rage -= 5
+
+        # КОМБО
+        if pygame.time.get_ticks() - self.combo_timer > 5000:
+            self.combo_timer = 0
+            self.combo = 0
+
+        if self.combo_timer:  # TODO: Тень
+            text = self.combo_font.render(f'{self.combo}X', True,
+                                          (200, self.blink_combo, self.blink_combo))
+            self.surface.blit(
+                text,
+                (self.screen.get_width() - text.get_width() - 10, 10)
+            )
+
+        if self.blink_combo > 0:
+            self.blink_combo -= 5
 
         # ВЫВОД НА ЭКРАН
         self.screen.blit(self.surface, (0, 0))

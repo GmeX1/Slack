@@ -3,13 +3,12 @@ import sqlite3
 import sys
 
 import pygame
-from numpy.random import randint
+
 from UI_class import UI
 from menu_class import DeathScreen, Menu, Pause
 from player_class import Bullet, Enemy, Player
 from scripts import database_create, generate_tiles, show_fps, time_convert
 from small_logic_classes import Camera, Level
-from particles import BloodParticle
 
 pygame.init()
 pygame.display.set_caption('Slack')
@@ -93,6 +92,7 @@ def start_game():
                     player.hp += 1
                     ui.set_hp(player.hp)
                     ui.add_rage(25)
+                    ui.combo += 1
         all_sprites.update(tiles=level.tiles, enemies=enemies, player=player_group)
         screen.fill((0, 0, 0))
         camera.draw_offset(player)
@@ -108,8 +108,7 @@ def start_game():
             else:
                 return 'restart'
         if player.kills > ui.kills:
-            ui.add_rage(50)  # TODO: Сделать коэффициент
-            ui.kills += 1
+            ui.kill(50)  # TODO: Сделать коэффициент
         ui.draw()
 
         if fps_switch:
