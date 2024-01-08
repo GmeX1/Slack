@@ -14,7 +14,7 @@ class BloodParticle(pygame.sprite.Sprite):
         self.half_width = self.rect.width / 2
         self.half_height = self.rect.height / 2
         self.radius = self.half_width
-        self.shrink_speed = uniform(0.0001, 0.05)
+        self.shrink_speed = uniform(0.0005, 0.05)
         self.direction = pygame.math.Vector2(randint(-2, 3), randint(-5, 1))
 
     def update(self, **kwargs):

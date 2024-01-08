@@ -216,9 +216,8 @@ class Bullet(Entity):
             else:
                 for entity in pygame.sprite.spritecollide(self, entities, False, collided=pygame.sprite.collide_mask):
                     entity.hp -= 1
-                    print(entity.hp)
+                    [BloodParticle(entity.rect.center, *self.groups()) for _ in range(random.randint(5, 13))]
                     if entity.hp <= 0:
-                        [BloodParticle(entity.rect.center, *self.groups()) for _ in range(random.randint(4, 13))]
                         entity.kill()
                         self.kill()
                         return True
