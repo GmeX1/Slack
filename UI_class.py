@@ -17,7 +17,10 @@ class UI:
         }
         self.hp_amount = 0
 
-        self.combo_font = pygame.font.Font('data\\fonts\\facon.otf', 100)
+        self.combo_font = pygame.font.Font('data\\fonts\\facon.otf', 90)
+        self.combo_font_shadow = pygame.font.Font('data\\fonts\\facon.otf', 100)
+        self.combo_shadow_shift = pygame.math.Vector2()
+        self.combo_anim_stage = 0
         self.combo = 0
         self.combo_timer = 0
         self.blink_combo = 0
@@ -110,14 +113,44 @@ class UI:
             if pygame.time.get_ticks() - self.combo_timer > 5000:
                 self.combo_timer = 0
                 self.combo = 0
+                self.combo_shadow_shift.x = self.combo_shadow_shift.y = 0
+                self.combo_anim_stage = 0
 
             if self.combo > 1:  # TODO: Тень
                 text = self.combo_font.render(f'{self.combo}X', True,
                                               (200, self.blink_combo, self.blink_combo))
+                text_shadow = self.combo_font_shadow.render(f'{self.combo}X', True,
+                                                            (self.combo, self.blink_combo, self.blink_combo))
+                self.surface.blit(
+                    text_shadow,
+                    (self.screen.get_width() - text_shadow.get_width() - 10 + self.combo_shadow_shift.x,
+                     self.combo_shadow_shift.y)
+                )
                 self.surface.blit(
                     text,
-                    (self.screen.get_width() - text.get_width() - 10, 10)
+                    (self.screen.get_width() - text.get_width() / 2 - text_shadow.get_width() / 2 - 10,
+                     5)
                 )
+                if self.combo_anim_stage == 0:
+                    self.combo_shadow_shift.y -= 0.2
+                    if self.combo_shadow_shift.y < -3:
+                        self.combo_shadow_shift.y = -3
+                        self.combo_anim_stage = 1
+                elif self.combo_anim_stage == 1:
+                    self.combo_shadow_shift.x += 0.2
+                    if self.combo_shadow_shift.x > 5:
+                        self.combo_shadow_shift.x = 5
+                        self.combo_anim_stage = 2
+                elif self.combo_anim_stage == 2:
+                    self.combo_shadow_shift.y += 0.2
+                    if self.combo_shadow_shift.y > 3:
+                        self.combo_shadow_shift.y = 3
+                        self.combo_anim_stage = 3
+                elif self.combo_anim_stage == 3:
+                    self.combo_shadow_shift.x -= 0.2
+                    if self.combo_shadow_shift.x < 0:
+                        self.combo_shadow_shift.x = 0
+                        self.combo_anim_stage = 0
 
         if self.blink_combo > 0:
             self.blink_combo -= 5

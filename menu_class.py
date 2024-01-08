@@ -249,10 +249,9 @@ class DeathScreen(Menu):  # TODO: Сделать анимацию покраси
                     (self.surface.get_width() / 2, self.surface.get_height() / 8 * (i + 1.5))
                 )
 
-    def set_stats(self, kills, time, combo):
+    def set_stats(self, kills, time):
         self.kills = kills
         self.live_time = time
-        self.max_combo = combo
         self.generate_menu()
 
     def start(self):

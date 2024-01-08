@@ -99,7 +99,7 @@ def start_game():
             ui.remove_hp()
         if player.hp <= 0:
             death_screen.set_last_frame(screen.copy())
-            death_screen.set_stats(player.kills, time_convert(pygame.time.get_ticks()), 1)
+            death_screen.set_stats(player.kills, time_convert(pygame.time.get_ticks()))
             menu_open = death_screen.start()
             if menu_open:
                 return 'menu'
@@ -110,6 +110,7 @@ def start_game():
         if ui.combo_timer:
             if player.combo != ui.combo:
                 player.combo = ui.combo
+                death_screen.max_combo = max(ui.combo, death_screen.max_combo)
         else:
             player.combo = 0
         ui.draw()
