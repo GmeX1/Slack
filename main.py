@@ -113,6 +113,10 @@ def start_game():
                 death_screen.max_combo = max(ui.combo, death_screen.max_combo)
         else:
             player.combo = 0
+        if ui.deplete:
+            player.raging = True
+        else:
+            player.raging = False
         ui.draw()
 
         if fps_switch:

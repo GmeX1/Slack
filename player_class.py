@@ -121,16 +121,25 @@ class Player(Entity):
         self.start_tick = pygame.time.get_ticks()
         self.last_shift_time = 0
         self.dashing = False
+        self.raging = False
 
         self.base_speed = 8 if not self.walk_mode else 2
         self.speed = self.base_speed
         self.base_jump_power = -6 if not self.walk_mode else -3
         self.jump_power = self.base_jump_power
 
-    def boost_combo(self):
-        mult = self.combo if self.combo < 6 else 7
-        self.speed = self.base_speed + self.base_speed * mult * 0.1
-        self.jump_power = self.base_jump_power + self.base_jump_power * mult * 0.1
+    def boost(self):  # TODO: Сделать уменьшение кулдаунов
+        if self.combo > 1 and self.raging:
+            mult = self.combo if self.combo < 6 else 7
+            self.speed = self.base_speed + self.base_speed * mult * 0.1 + 3
+            self.jump_power = self.base_jump_power + self.base_jump_power * mult * 0.1 + 3
+        elif self.combo > 1:
+            mult = self.combo if self.combo < 6 else 7
+            self.speed = self.base_speed + self.base_speed * mult * 0.1
+            self.jump_power = self.base_jump_power + self.base_jump_power * mult * 0.1
+        elif self.raging:
+            self.speed = self.base_speed + 3
+            self.jump_power = self.base_jump_power + 3
 
     def import_anims(self, load_func):
         self.frames = {
@@ -190,9 +199,8 @@ class Player(Entity):
 
     def update(self, **kwargs):
         if not self.dashing:
-            if self.combo:
-                if self.combo > 1:
-                    self.boost_combo()
+            if self.combo or self.raging:
+                self.boost()
             else:
                 self.speed = self.base_speed
                 self.jump_power = self.base_jump_power
