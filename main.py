@@ -89,7 +89,7 @@ def start_game():
                         player.hp -= 1
                         ui.remove_hp()
                 if event.key == pygame.K_j:
-                    ui.kill(5)
+                    ui.kill(100)
         all_sprites.update(tiles=level.tiles, enemies=enemies, player=player_group)
         screen.fill((0, 0, 0))
         camera.draw_offset(player)

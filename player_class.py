@@ -95,7 +95,7 @@ class Entity(pygame.sprite.Sprite):
         elif name == 'idle_l':
             self.image = self.frames['idle_l'].copy()
 
-        # TODO: посмотри на ходьюу влево и на ходьбу вправо. Вроде я отцентровал X, но это вообще не помогло(
+        # TODO: посмотри на ходьбу влево и на ходьбу вправо. Вроде я отцентровал X, но это вообще не помогло(
         self.rect = self.image.get_rect(midbottom=self.map_rect.midbottom)
 
     def update(self, **kwargs):
@@ -133,13 +133,15 @@ class Player(Entity):
             mult = self.combo if self.combo < 6 else 7
             self.speed = self.base_speed + self.base_speed * mult * 0.1 + 3
             self.jump_power = self.base_jump_power + self.base_jump_power * mult * 0.1 + 3
+            self.inv_time = 1500
         elif self.combo > 1:
             mult = self.combo if self.combo < 6 else 7
             self.speed = self.base_speed + self.base_speed * mult * 0.1
             self.jump_power = self.base_jump_power + self.base_jump_power * mult * 0.1
         elif self.raging:
             self.speed = self.base_speed + 3
-            self.jump_power = self.base_jump_power + 3
+            self.jump_power = self.base_jump_power - 3
+            self.inv_time = 1500
 
     def import_anims(self, load_func):
         self.frames = {
@@ -351,6 +353,3 @@ class Enemy(Entity):
             self.map_rect.y += self.direction.y
             self.rect.y = self.map_rect.y
             self.check_vertical_collisions(kwargs['tiles'])
-
-            # if self.collisions['left'] or self.collisions['right']: TODO: Обнулять таймер, если стена
-            #     self.standing_time = float('inf')

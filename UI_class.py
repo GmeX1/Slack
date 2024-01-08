@@ -116,7 +116,7 @@ class UI:
                 self.combo_shadow_shift.x = self.combo_shadow_shift.y = 0
                 self.combo_anim_stage = 0
 
-            if self.combo > 1:  # TODO: Тень
+            if self.combo > 1:
                 text = self.combo_font.render(f'{self.combo}X', True,
                                               (200, self.blink_combo, self.blink_combo))
                 text_shadow = self.combo_font_shadow.render(f'{self.combo}X', True,

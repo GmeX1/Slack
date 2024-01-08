@@ -36,7 +36,7 @@ class BloodParticle(pygame.sprite.Sprite):
 
 
 class SparkParticle(pygame.sprite.Sprite):
-    # TODO: Возможно стоить добавить beat sync?
+    # TODO: Возможно стоит добавить beat sync?
     # TODO: Сделать авто-оптимизацию под слабые устройства?
     def __init__(self, pos, *groups):
         super().__init__(*groups)
