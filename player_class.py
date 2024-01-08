@@ -1,6 +1,6 @@
 import pygame
 from numpy import random
-from particles import BloodParticle
+from particles import BloodParticle, DashParticle
 from scripts import make_anim_list
 
 
@@ -118,6 +118,7 @@ class Player(Entity):
 
         self.start_tick = pygame.time.get_ticks()
         self.last_shift_time = 0
+        self.dashing = {'start': (float('inf'), float('inf')), 'end': (float('inf'), float('inf'))}
 
         self.base_speed = 8 if not self.walk_mode else 2
         self.speed = self.base_speed
@@ -171,10 +172,13 @@ class Player(Entity):
                 self.direction.x = 1
             elif self.last_keys == -1:
                 self.direction.x = -1
-                # Настроить под анимцию
+                # Настроить под анимацию
+            self.dashing['start'] = self.map_rect.center
             self.speed += 100
             self.last_shift_time = pygame.time.get_ticks()
         elif pygame.time.get_ticks() - self.last_shift_time <= 2000:
+            if sum(self.dashing['start']) != float('inf'):
+                self.dashing['end'] = self.map_rect.center
             self.speed = self.base_speed
 
     def update(self, **kwargs):

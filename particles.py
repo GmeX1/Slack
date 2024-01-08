@@ -3,6 +3,29 @@ from numpy import cos, pi, sin
 from numpy.random import randint, uniform
 
 
+class DashParticle(pygame.sprite.Sprite):
+    def __init__(self, pos_start, pos_end, *groups):
+        super().__init__(*groups)
+        self.pos_start = pos_start
+        self.pos_end = pos_end
+        self.image = pygame.Surface((abs(pos_end[0] - pos_start[0]), 6)).convert_alpha()
+        # self.image.set_colorkey((0, 0, 0))
+        self.rect = self.image.get_rect().move((min(pos_start[0], pos_end[0]), min(pos_start[1], pos_end[1])))
+        self.opacity = 255
+
+    def update(self, **kwargs):
+        self.image.fill((0, 0, 0, 0))
+        pygame.draw.ellipse(
+            self.image,
+            (255, 0, 0, self.opacity),
+            (0, 0, *self.rect.size)
+            # ((0, self.rect.height / 2), (self.rect.width, 0), self.rect.size)
+        )
+        self.opacity -= 10
+        if self.opacity <= 0:
+            self.kill()
+
+
 class BloodParticle(pygame.sprite.Sprite):
     def __init__(self, pos, *groups):
         super().__init__(*groups)

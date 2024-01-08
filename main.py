@@ -3,13 +3,13 @@ import sqlite3
 import sys
 
 import pygame
-from numpy.random import randint
+
 from UI_class import UI
 from menu_class import DeathScreen, Menu, Pause
+from particles import DashParticle
 from player_class import Bullet, Enemy, Player
 from scripts import database_create, generate_tiles, show_fps, time_convert
 from small_logic_classes import Camera, Level
-from particles import BloodParticle
 
 pygame.init()
 pygame.display.set_caption('Slack')
@@ -96,6 +96,11 @@ def start_game():
         all_sprites.update(tiles=level.tiles, enemies=enemies, player=player_group)
         screen.fill((0, 0, 0))
         camera.draw_offset(player)
+
+        if sum(player.dashing['end']) != float('inf'):
+            DashParticle(player.dashing['start'], player.dashing['end'], all_sprites, camera)
+            player.dashing['start'] = (float('inf'), float('inf'))
+            player.dashing['end'] = (float('inf'), float('inf'))
 
         if player.hp < ui.hp_amount:
             ui.remove_hp()
