@@ -1,10 +1,10 @@
 from sys import exit as sys_exit
-
 import pygame
 from numpy.random import randint
 
 from particles import SparkParticle
 from scripts import show_fps
+from init import sounds, set_effects_volume
 
 
 class Menu:
@@ -78,6 +78,7 @@ class Menu:
         elif button.text == 'НАЗАД':
             self.db.commit()
             self.generate_menu()
+            set_effects_volume()
         elif type(button) == ButtonSlider:
             if button.get_click_zone() == 'left':
                 button.change_value(-5)
@@ -329,6 +330,7 @@ class Button:
 
     def click(self, pos):
         if pygame.Rect(*pos, 1, 1).colliderect(self.rect):
+            pygame.mixer.find_channel().play(sounds['click'])
             return True
         return False
 

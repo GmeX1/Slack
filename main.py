@@ -1,17 +1,12 @@
-import os
-import sqlite3
 import sys
 
-import pygame
-
+from init import *
 from UI_class import UI
 from menu_class import DeathScreen, Menu, Pause
 from player_class import Bullet, Enemy, Player
-from scripts import database_create, generate_tiles, show_fps, time_convert
+from scripts import generate_tiles, show_fps, time_convert
 from small_logic_classes import Camera, Level
 
-pygame.mixer.pre_init(44100, -16, 1, 512)
-pygame.init()
 pygame.display.set_caption('Slack')
 info = pygame.display.Info()
 # screen = pygame.display.set_mode((info.current_w, info.current_h), pygame.FULLSCREEN)
@@ -146,10 +141,6 @@ def start_game():
 
 
 if __name__ == '__main__':
-    if not os.path.exists(os.path.join('data', 'db', 'gamedata.db')):
-        db = database_create()
-    else:
-        db = sqlite3.connect('data\\db\\gamedata.db')
     ui = UI(screen, screen.get_size(), load_image)
     menu = Menu(screen, db)
     pause = Pause(screen, db)
