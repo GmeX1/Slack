@@ -1,10 +1,11 @@
 from sys import exit as sys_exit
+
 import pygame
 from numpy.random import randint
 
+from init import set_effects_volume, sounds
 from particles import SparkParticle
 from scripts import show_fps
-from init import sounds, set_effects_volume
 
 
 class Menu:
@@ -79,6 +80,7 @@ class Menu:
             self.db.commit()
             self.generate_menu()
             set_effects_volume()
+            self.update_music_volume()
         elif type(button) == ButtonSlider:
             if button.get_click_zone() == 'left':
                 button.change_value(-5)
@@ -87,7 +89,18 @@ class Menu:
             self.fps_switch = self.cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()[0][0]
         return 'working'
 
+    def update_music_volume(self):
+        volume = self.cur.execute('SELECT value FROM settings WHERE name="music_volume"').fetchone()[0] / 100
+        pygame.mixer.music.set_volume(volume)
+
+    def start_music(self):
+        volume = self.cur.execute('SELECT value FROM settings WHERE name="music_volume"').fetchone()[0] / 100
+        pygame.mixer.music.load('data\\music\\menu.wav')
+        pygame.mixer.music.set_volume(volume)
+        pygame.mixer.music.play(-1)
+
     def start(self):
+        self.start_music()
         particles = pygame.sprite.Group()
         self.show = True
         clock = pygame.time.Clock()
@@ -164,6 +177,7 @@ class Pause(Menu):  # TODO: накладывается один фпс на др
         elif button.text == 'НАЗАД':
             self.db.commit()
             self.generate_menu()
+            set_effects_volume()
         elif type(button) == ButtonSlider:
             if button.get_click_zone() == 'left':
                 button.change_value(-5)

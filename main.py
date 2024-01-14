@@ -6,6 +6,7 @@ from menu_class import DeathScreen, Menu, Pause
 from player_class import Bullet, Enemy, Player
 from scripts import generate_tiles, show_fps, time_convert
 from small_logic_classes import Camera, Level
+from music_class import Music
 
 pygame.display.set_caption('Slack')
 info = pygame.display.Info()
@@ -36,7 +37,7 @@ def load_image(name, colorkey=None):  # TODO: Перенести функцию 
     return image
 
 
-def start_game():
+def start_game(level):
     bullet_icon = load_image('bullet\\bullet.png')
 
     all_sprites = pygame.sprite.Group()
@@ -44,7 +45,8 @@ def start_game():
     player_group = pygame.sprite.GroupSingle()
     camera = Camera(screen)
 
-    level = Level(load_image('maps\\1.png'), '1', screen, camera)
+    level = Level(load_image(f'maps\\{level}.png'), level, screen, camera)
+    music = Music(level)
     player = Player(load_image('player\\idle\\idle_r.png'), level.get_player_spawn(),
                     False,  # TODO: Переделать, тесты (level.get_story_mode())
                     all_sprites, camera, player_group)
@@ -73,11 +75,14 @@ def start_game():
                     shoot_timer = pygame.time.get_ticks()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
+                    music.pause()
                     pause.set_last_frame(screen.copy())
                     menu_open = pause.start()
                     if menu_open:
                         return 'menu'
                     fps_switch = cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()[0][0]
+                    music.update_volume()
+                    music.resume()
                 if event.key == pygame.K_q:
                     ui.activate_rage()
                 if event.key == pygame.K_h:  # TODO: Убрать. Для тестов.
@@ -115,6 +120,8 @@ def start_game():
             player.raging = False
         ui.draw()
 
+        music.check_combo(player.combo)
+
         if fps_switch:
             show_fps(screen, clock)
         pygame.display.flip()
@@ -130,10 +137,10 @@ if __name__ == '__main__':
     death_screen = DeathScreen(screen, db)
     menu.start()
     generate_tiles()
-    answer = start_game()
+    answer = start_game('1')
     while answer:
         if answer == 'menu':
             menu.start()
         ui = UI(screen, screen.get_size(), load_image)
         death_screen = DeathScreen(screen, db)
-        answer = start_game()  # Пока что игра просто перезапускается, ибо нет контрольных точек
+        answer = start_game('1')  # Пока что игра просто перезапускается, ибо нет контрольных точек
