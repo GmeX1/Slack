@@ -201,13 +201,14 @@ class Player(Entity):
             self.speed = self.base_speed
             self.dashing = False
 
-    def update_anim(self, name):
+    def update_anim(self, name=''):
         if self.last_anim == 'shoot_r' or self.last_anim == 'shoot_l':
             if name == 'shoot_r' or self.last_anim == 'shoot_r':
                 self.cur_frame += 0.2
                 if self.cur_frame >= len(self.frames['shoot_r']):
                     self.cur_frame = 0
                     self.last_anim = ''
+                    self.speed = self.base_speed
                 self.image = self.frames['shoot_r'][int(self.cur_frame)].copy()
 
             elif name == 'shoot_l' or self.last_anim == 'shoot_l':
@@ -215,6 +216,7 @@ class Player(Entity):
                 if self.cur_frame >= len(self.frames['shoot_l']):
                     self.cur_frame = 0
                     self.last_anim = ''
+                    self.speed = self.base_speed
                 self.image = self.frames['shoot_l'][int(self.cur_frame)].copy()
         else:
             if name == 'right' and not self.last_anim.startswith('jump'):
@@ -235,21 +237,23 @@ class Player(Entity):
                 else:
                     self.cur_frame %= len(self.frames['run_l'])
                     self.image = self.frames['run_l'][int(self.cur_frame)].copy()
-            elif (name == 'jump_r' or self.last_anim == 'jump_r') and not self.last_anim.startswith('shoot'):
-                self.last_anim = 'jump_r'
-                self.jump()
-                self.cur_frame += self.animation_speed
-                if self.cur_frame >= len(self.frames['jump_r']):
-                    self.cur_frame = len(self.frames['jump_r']) - 1
-                self.image = self.frames['jump_r'][int(self.cur_frame)].copy()
-
-            elif (name == 'jump_l' or self.last_anim == 'jump_l') and not self.last_anim.startswith('shoot'):
-                self.last_anim = 'jump_l'
-                self.jump()
-                self.cur_frame += self.animation_speed
-                if self.cur_frame >= len(self.frames['jump_l']):
-                    self.cur_frame = len(self.frames['jump_l']) - 1
-                self.image = self.frames['jump_l'][int(self.cur_frame)].copy()
+            elif name.startswith('jump') or self.last_anim.startswith('jump'):
+                # TODO: Свернул условие, чтобы позже исправить баг.
+                #  Сам баг: если прыгнуть вправо и пойти влево (или наоборот), персонаж не поворачивается
+                if name == 'jump_r' or self.last_anim == 'jump_r':
+                    self.last_anim = 'jump_r'
+                    self.jump()
+                    self.cur_frame += self.animation_speed
+                    if self.cur_frame >= len(self.frames['jump_r']):
+                        self.cur_frame = len(self.frames['jump_r']) - 1
+                    self.image = self.frames['jump_r'][int(self.cur_frame)].copy()
+                elif name == 'jump_l' or self.last_anim == 'jump_l':
+                    self.last_anim = 'jump_l'
+                    self.jump()
+                    self.cur_frame += self.animation_speed
+                    if self.cur_frame >= len(self.frames['jump_l']):
+                        self.cur_frame = len(self.frames['jump_l']) - 1
+                    self.image = self.frames['jump_l'][int(self.cur_frame)].copy()
             else:
                 self.cur_frame = 0
 
@@ -286,7 +290,7 @@ class Player(Entity):
         self.direction.y += 0.2
         self.map_rect.y += self.direction.y
         self.check_vertical_collisions(kwargs['tiles'])
-        if self.last_anim == 'jump_r' or self.last_anim == 'jump_l':
+        if self.last_anim.startswith('jump'):
             if self.collisions['bottom']:
                 self.last_anim = ''
                 self.cur_frame = 0

@@ -1,17 +1,18 @@
 import sys
 
-from init import *
 from UI_class import UI
+from init import *
 from menu_class import DeathScreen, Menu, Pause
+from music_class import Music
 from player_class import Bullet, Enemy, Player
 from scripts import generate_tiles, show_fps, time_convert
 from small_logic_classes import Camera, Level
-from music_class import Music
 
 pygame.display.set_caption('Slack')
 info = pygame.display.Info()
 # screen = pygame.display.set_mode((info.current_w, info.current_h), pygame.FULLSCREEN)
 screen = pygame.display.set_mode((info.current_w - 100, info.current_h - 100))  # На время тестов лучше оконный режим
+
 
 # TODO: переписать код, чтобы классы активно пользовались init.py
 def load_image(name, colorkey=None):  # TODO: Перенести функцию в scripts
@@ -48,13 +49,13 @@ def start_game(level_name):
     level = Level(load_image(f'maps\\{level_name}.png'), level_name, screen, camera)
     music = Music(level_name)
     player = Player(load_image('player\\idle\\idle_r.png'), level.get_player_spawn(),
-                    True,  # TODO: Переделать, тесты (level.get_story_mode())
+                    False,  # TODO: Переделать, тесты (level.get_story_mode())
                     all_sprites, camera, player_group)
     player.import_anims(load_image)
     camera.get_map_image(level.image)
 
-    # [Enemy(pygame.Surface((10, 50)), i, player, bullet_icon,
-    #        all_sprites, enemies, camera) for i in level.get_enemies_pos()]
+    [Enemy(pygame.Surface((10, 50)), i, player, bullet_icon,
+           all_sprites, enemies, camera) for i in level.get_enemies_pos()]
 
     cur = db.cursor()
     fps_switch = cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()[0][0]
