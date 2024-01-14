@@ -327,6 +327,7 @@ class Button:
         self.pos = pos
         self.rect = self.render.get_rect().move(self.get_relative_pos())
         self.hover = hover
+        self.is_hovered = False
         if self.hover:
             self.anim_offset_x = 0
             self.layers = [
@@ -366,9 +367,13 @@ class Button:
     def update(self):
         if self.hover:
             if pygame.Rect(*pygame.mouse.get_pos(), 1, 1).colliderect(self.rect):
+                if not self.is_hovered:
+                    pygame.mixer.find_channel().play(sounds['hover'])
+                    self.is_hovered = True
                 self.color = (0, 172, 0)
                 self.update_anim()
             else:
+                self.is_hovered = False
                 self.anim_offset_x = 0
                 self.layers[0][1] = 0
                 self.layers[1][1] = 0

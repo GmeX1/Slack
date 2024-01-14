@@ -21,6 +21,7 @@ else:
     db = sqlite3.connect('data\\db\\gamedata.db')
 
 sounds = {
-    'click': pygame.mixer.Sound('data\\sounds\\click.wav')
+    'click': pygame.mixer.Sound('data\\sounds\\click.wav'),
+    'hover': pygame.mixer.Sound('data\\sounds\\hover.wav')
 }
 set_effects_volume()
