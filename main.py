@@ -1,23 +1,20 @@
-import os
-import sqlite3
 import sys
 
-import pygame
-
+from init import *
 from UI_class import UI
 from menu_class import DeathScreen, Menu, Pause
 from player_class import Bullet, Enemy, Player
-from scripts import database_create, generate_tiles, show_fps, time_convert
+from scripts import generate_tiles, show_fps, time_convert
 from small_logic_classes import Camera, Level
+from music_class import Music
 
-pygame.init()
 pygame.display.set_caption('Slack')
 info = pygame.display.Info()
 # screen = pygame.display.set_mode((info.current_w, info.current_h), pygame.FULLSCREEN)
 screen = pygame.display.set_mode((info.current_w - 100, info.current_h - 100))  # На время тестов лучше оконный режим
 
-
-def load_image(name, colorkey=None):
+# TODO: переписать код, чтобы классы активно пользовались init.py
+def load_image(name, colorkey=None):  # TODO: Перенести функцию в scripts
     path = ['data']
     if '\\' in name:
         [path.append(i) for i in name.split('\\')]
@@ -40,7 +37,7 @@ def load_image(name, colorkey=None):
     return image
 
 
-def start_game():
+def start_game(level_name):
     bullet_icon = load_image('bullet\\bullet.png')
 
     all_sprites = pygame.sprite.Group()
@@ -48,7 +45,8 @@ def start_game():
     player_group = pygame.sprite.GroupSingle()
     camera = Camera(screen)
 
-    level = Level(load_image('maps\\test_lvl.png'), 'test_lvl', screen, camera)
+    level = Level(load_image(f'maps\\{level_name}.png'), level_name, screen, camera)
+    music = Music(level_name)
     player = Player(load_image('player\\idle\\idle_r.png'), level.get_player_spawn(),
                     False,  # TODO: Переделать, тесты (level.get_story_mode())
                     all_sprites, camera, player_group)
@@ -77,11 +75,14 @@ def start_game():
                     shoot_timer = pygame.time.get_ticks()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
+                    music.pause()
                     pause.set_last_frame(screen.copy())
                     menu_open = pause.start()
                     if menu_open:
                         return 'menu'
                     fps_switch = cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()[0][0]
+                    music.update_volume()
+                    music.resume()
                 if event.key == pygame.K_q:
                     ui.activate_rage()
                 if event.key == pygame.K_h:  # TODO: Убрать. Для тестов.
@@ -119,6 +120,8 @@ def start_game():
             player.raging = False
         ui.draw()
 
+        music.check_combo(player.combo)
+
         if fps_switch:
             show_fps(screen, clock)
         pygame.display.flip()
@@ -128,20 +131,16 @@ def start_game():
 
 
 if __name__ == '__main__':
-    if not os.path.exists(os.path.join('data', 'db', 'gamedata.db')):
-        db = database_create()
-    else:
-        db = sqlite3.connect('data\\db\\gamedata.db')
     ui = UI(screen, screen.get_size(), load_image)
     menu = Menu(screen, db)
     pause = Pause(screen, db)
     death_screen = DeathScreen(screen, db)
     menu.start()
     generate_tiles()
-    answer = start_game()
+    answer = start_game('1')
     while answer:
         if answer == 'menu':
             menu.start()
         ui = UI(screen, screen.get_size(), load_image)
         death_screen = DeathScreen(screen, db)
-        answer = start_game()  # Пока что игра просто перезапускается, ибо нет контрольных точек
+        answer = start_game('1')  # Пока что игра просто перезапускается, ибо нет контрольных точек
