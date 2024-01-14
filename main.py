@@ -50,13 +50,13 @@ def start_game():
 
     level = Level(load_image('maps\\test_lvl.png'), 'test_lvl', screen, camera)
     player = Player(load_image('player\\idle\\idle_r.png'), level.get_player_spawn(),
-                    False,  # TODO: Переделать, тесты (level.get_story_mode())
+                    True,  # TODO: Переделать, тесты (level.get_story_mode())
                     all_sprites, camera, player_group)
     player.import_anims(load_image)
     camera.get_map_image(level.image)
 
-    [Enemy(pygame.Surface((10, 50)), i, player, bullet_icon,
-           all_sprites, enemies, camera) for i in level.get_enemies_pos()]
+    # [Enemy(pygame.Surface((10, 50)), i, player, bullet_icon,
+    #        all_sprites, enemies, camera) for i in level.get_enemies_pos()]
 
     cur = db.cursor()
     fps_switch = cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()[0][0]
@@ -71,8 +71,14 @@ def start_game():
             if event.type == pygame.QUIT:
                 run = False
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 3 and pygame.time.get_ticks() - shoot_timer > 500:
-                    Bullet(bullet_icon, player.map_rect.center, player.last_keys, 'player',
+                if event.button == 3 and pygame.time.get_ticks() - shoot_timer > 500 and player.collisions['bottom']:
+                    if player.last_keys == 1:
+                        player.last_anim = 'shoot_r'
+                        player.update_anim('shoot_r')
+                    elif player.last_keys == -1:
+                        player.last_anim = 'shoot_l'
+                        player.update_anim('shoot_l')
+                    Bullet(bullet_icon, (player.map_rect.centerx,player.map_rect.centery - 20 ), player.last_keys, 'player',
                            all_sprites, camera)
                     shoot_timer = pygame.time.get_ticks()
             if event.type == pygame.KEYDOWN:

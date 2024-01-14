@@ -37,12 +37,17 @@ class Entity(pygame.sprite.Sprite):
             'idle_r': load_func(),
             'idle_l': load_func(None),
             'walk_r': make_anim_list(load_func, None),
-            'walk_l': make_anim_list(load_func, None, True)
+            'walk_l': make_anim_list(load_func, None, True),
+            'jump_r': make_anim_list(load_func, None),
+            'jump_l': make_anim_list(load_func, None, True),
+            'shoot_r': make_anim_list(load_func, None),
+            'shoot_l': make_anim_list(load_func, None, True),
+
         }
 
     def jump(self):
-        # if self.collisions['bottom']: # TODO: Расскомментить, тесты.
-        self.direction.y = self.jump_power
+        if self.collisions['bottom']:  # TODO: Расскомментить, тесты.
+            self.direction.y = self.jump_power
 
     def check_horizontal_collisions(self, tiles):
         for sprite in tiles.sprites():
@@ -78,33 +83,6 @@ class Entity(pygame.sprite.Sprite):
         if self.collisions['top'] and self.direction.y > 0:
             self.collisions['top'] = False
 
-    def update_anim(self, name):
-        if name == 'right':
-            self.cur_frame += self.animation_speed
-            self.cur_frame %= len(self.frames['walk_r'])
-            self.image = self.frames['walk_r'][int(self.cur_frame)].copy()
-        elif name == 'left':
-            self.cur_frame += self.animation_speed
-            self.cur_frame %= len(self.frames['walk_l'])
-            self.image = self.frames['walk_l'][int(self.cur_frame)].copy()
-        else:
-            self.cur_frame = 0
-
-        if name == 'idle_r':
-            self.image = self.frames['idle_r'].copy()
-        elif name == 'idle_l':
-            self.image = self.frames['idle_l'].copy()
-
-        if name == 'jump_r':
-            self.direction.y = self.jump_power
-            self.image = self.frames['jump_r'][int(self.cur_frame)].copy()
-        elif name == 'jump_l':
-            self.direction.y = self.jump_power
-            self.image = self.frames['jump_l'][int(self.cur_frame)].copy()
-
-        # TODO: посмотри на ходьбу влево и на ходьбу вправо. Вроде я отцентровал X, но это вообще не помогло(
-        self.rect = self.image.get_rect(midbottom=self.map_rect.midbottom)
-
     def update(self, **kwargs):
         self.map_rect.x += self.direction.x * self.speed
         self.check_horizontal_collisions(kwargs['tiles'])
@@ -119,6 +97,7 @@ class Player(Entity):
         self.animation_speed = 0.15 if walk else 0.15 * 4
         self.walk_mode = walk
         self.last_keys = 1
+        self.last_anim = ''
         self.map_rect = pygame.Rect(pos, (25, self.rect.height))
 
         self.kills = 0
@@ -156,8 +135,14 @@ class Player(Entity):
             'idle_l': load_func('player\\idle\\idle_l.png'),
             'walk_r': make_anim_list(load_func, 'player\\walk'),
             'walk_l': make_anim_list(load_func, 'player\\walk', True),
+            'run_r': make_anim_list(load_func, 'player\\run'),
+            'run_l': make_anim_list(load_func, 'player\\run', True),
             'jump_r': make_anim_list(load_func, 'player\\jump'),
-            'jump_l': make_anim_list(load_func, 'player\\jump', True)
+            'jump_l': make_anim_list(load_func, 'player\\jump', True),
+            'shoot_r': make_anim_list(load_func, 'player\\shoot'),
+            'shoot_l': make_anim_list(load_func, 'player\\shoot', True),
+            'dash_r': load_func('player\\misc\\dash.png'),
+            'dash_l': load_func('player\\misc\\dash_l.png'),
         }
 
     def damage(self, value):
@@ -195,14 +180,19 @@ class Player(Entity):
         if keys[pygame.K_UP] or keys[pygame.K_w] or keys[pygame.K_SPACE]:
             if self.last_keys == 1:
                 self.update_anim('jump_r')
+                self.last_anim = 'jump_r'
             elif self.last_keys == -1:
                 self.update_anim('jump_l')
+                self.last_anim = 'jump_l'
 
         if keys[pygame.K_LSHIFT] and pygame.time.get_ticks() - self.last_shift_time > 2000:
             if self.last_keys == 1:
                 self.direction.x = 1
+                self.update_anim('dash_r')
+
             elif self.last_keys == -1:
                 self.direction.x = -1
+                self.update_anim('dash_l')
                 # Настроить под анимцию
             self.speed += 100
             self.dashing = True
@@ -210,6 +200,75 @@ class Player(Entity):
         elif pygame.time.get_ticks() - self.last_shift_time <= 2000:
             self.speed = self.base_speed
             self.dashing = False
+
+    def update_anim(self, name):
+        if self.last_anim == 'shoot_r' or self.last_anim == 'shoot_l':
+            if name == 'shoot_r' or self.last_anim == 'shoot_r':
+                self.cur_frame += 0.2
+                if self.cur_frame >= len(self.frames['shoot_r']):
+                    self.cur_frame = 0
+                    self.last_anim = ''
+                self.image = self.frames['shoot_r'][int(self.cur_frame)].copy()
+
+            elif name == 'shoot_l' or self.last_anim == 'shoot_l':
+                self.cur_frame += 0.2
+                if self.cur_frame >= len(self.frames['shoot_l']):
+                    self.cur_frame = 0
+                    self.last_anim = ''
+                self.image = self.frames['shoot_l'][int(self.cur_frame)].copy()
+        else:
+            if name == 'right' and not self.last_anim.startswith('jump'):
+                self.last_anim = 'right'
+                self.cur_frame += self.animation_speed
+                if self.walk_mode:
+                    self.cur_frame %= len(self.frames['walk_r'])
+                    self.image = self.frames['walk_r'][int(self.cur_frame)].copy()
+                else:
+                    self.cur_frame %= len(self.frames['run_r'])
+                    self.image = self.frames['run_r'][int(self.cur_frame)].copy()
+            elif name == 'left' and not self.last_anim.startswith('jump'):
+                self.last_anim = 'left'
+                self.cur_frame += self.animation_speed
+                if self.walk_mode:
+                    self.cur_frame %= len(self.frames['walk_l'])
+                    self.image = self.frames['walk_l'][int(self.cur_frame)].copy()
+                else:
+                    self.cur_frame %= len(self.frames['run_l'])
+                    self.image = self.frames['run_l'][int(self.cur_frame)].copy()
+            elif (name == 'jump_r' or self.last_anim == 'jump_r') and not self.last_anim.startswith('shoot'):
+                self.last_anim = 'jump_r'
+                self.jump()
+                self.cur_frame += self.animation_speed
+                if self.cur_frame >= len(self.frames['jump_r']):
+                    self.cur_frame = len(self.frames['jump_r']) - 1
+                self.image = self.frames['jump_r'][int(self.cur_frame)].copy()
+
+            elif (name == 'jump_l' or self.last_anim == 'jump_l') and not self.last_anim.startswith('shoot'):
+                self.last_anim = 'jump_l'
+                self.jump()
+                self.cur_frame += self.animation_speed
+                if self.cur_frame >= len(self.frames['jump_l']):
+                    self.cur_frame = len(self.frames['jump_l']) - 1
+                self.image = self.frames['jump_l'][int(self.cur_frame)].copy()
+            else:
+                self.cur_frame = 0
+
+            if name == 'idle_r':
+                self.last_anim = 'idle_r'
+                self.image = self.frames['idle_r'].copy()
+            elif name == 'idle_l':
+                self.last_anim = 'idle_l'
+                self.image = self.frames['idle_l'].copy()
+
+            if name == 'dash_r':
+                self.last_anim = 'dash_r'
+                self.image = self.frames['dash_r'].copy()
+            elif name == 'dash_l':
+                self.last_anim = 'dash_l'
+                self.image = self.frames['dash_l'].copy()
+
+        # TODO: посмотри на ходьбу влево и на ходьбу вправо. Вроде я отцентровал X, но это вообще не помогло(
+        self.rect = self.image.get_rect(midbottom=self.map_rect.midbottom)
 
     def update(self, **kwargs):
         if not self.dashing:
@@ -220,18 +279,24 @@ class Player(Entity):
                 self.jump_power = self.base_jump_power
                 self.combo = -1
 
+        if self.last_anim.startswith('shoot'):
+            self.speed = 0
         self.map_rect.x += self.direction.x * self.speed
         self.check_horizontal_collisions(kwargs['tiles'])
         self.direction.y += 0.2
         self.map_rect.y += self.direction.y
         self.check_vertical_collisions(kwargs['tiles'])
-        self.get_keys()
+        if self.last_anim == 'jump_r' or self.last_anim == 'jump_l':
+            if self.collisions['bottom']:
+                self.last_anim = ''
+                self.cur_frame = 0
         if self.inv_time > 0:
             self.inv_time -= pygame.time.get_ticks() - self.start_tick
             if self.inv_time <= 0:
                 self.image.set_alpha(255)
             else:
                 self.image.set_alpha(100 + (1500 - self.inv_time) / (1500 / 125))
+        self.get_keys()
         self.start_tick = pygame.time.get_ticks()
 
 
