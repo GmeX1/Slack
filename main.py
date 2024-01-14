@@ -37,7 +37,7 @@ def load_image(name, colorkey=None):  # TODO: Перенести функцию 
     return image
 
 
-def start_game(level):
+def start_game(level_name):
     bullet_icon = load_image('bullet\\bullet.png')
 
     all_sprites = pygame.sprite.Group()
@@ -45,8 +45,8 @@ def start_game(level):
     player_group = pygame.sprite.GroupSingle()
     camera = Camera(screen)
 
-    level = Level(load_image(f'maps\\{level}.png'), level, screen, camera)
-    music = Music(level)
+    level = Level(load_image(f'maps\\{level_name}.png'), level_name, screen, camera)
+    music = Music(level_name)
     player = Player(load_image('player\\idle\\idle_r.png'), level.get_player_spawn(),
                     False,  # TODO: Переделать, тесты (level.get_story_mode())
                     all_sprites, camera, player_group)

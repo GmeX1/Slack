@@ -62,7 +62,7 @@ class Music:
                     if self.layer_2['volume'] > self.volume:
                         self.layer_2['volume'] = self.volume
                     self.layer_2['channel'].set_volume(self.layer_2['volume'])
-            if combo > 3:
+            if combo > 4:
                 if self.layer_3['volume'] < self.volume:
                     self.layer_3['volume'] += 0.0005
                     if self.layer_3['volume'] > self.volume:
