@@ -13,7 +13,7 @@ info = pygame.display.Info()
 # screen = pygame.display.set_mode((info.current_w, info.current_h), pygame.FULLSCREEN)
 screen = pygame.display.set_mode((info.current_w - 100, info.current_h - 100))  # На время тестов лучше оконный режим
 
-
+# TODO: переписать код, чтобы классы активно пользовались init.py
 def load_image(name, colorkey=None):  # TODO: Перенести функцию в scripts
     path = ['data']
     if '\\' in name:
