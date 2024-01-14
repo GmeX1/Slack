@@ -13,7 +13,7 @@ info = pygame.display.Info()
 screen = pygame.display.set_mode((info.current_w - 100, info.current_h - 100))  # На время тестов лучше оконный режим
 
 
-def load_image(name, colorkey=None):
+def load_image(name, colorkey=None):  # TODO: Перенести функцию в scripts
     path = ['data']
     if '\\' in name:
         [path.append(i) for i in name.split('\\')]
@@ -37,23 +37,6 @@ def load_image(name, colorkey=None):
 
 
 def start_game():
-    # music_volume = db.cursor().execute('SELECT value FROM settings WHERE name="music_volume"').fetchone()[0] / 100
-    # pygame.mixer.music.load('data\\music\\level_1\\main_layer.wav')
-    # layer_1 = pygame.mixer.Channel(0)  # TODO: Завернуть в класс
-    # layer_1_sound = pygame.mixer.Sound('data\\music\\level_1\\layer_1.wav')
-    # layer_1.set_volume(0)
-    # layer_2 = pygame.mixer.Channel(1)
-    # layer_2_sound = pygame.mixer.Sound('data\\music\\level_1\\layer_2.wav')
-    # layer_2.set_volume(0)
-    # layer_3 = pygame.mixer.Channel(2)
-    # layer_3_sound = pygame.mixer.Sound('data\\music\\level_1\\layer_3.wav')
-    # layer_3.set_volume(0)
-    #
-    # pygame.mixer_music.play(-1)
-    # layer_1.play(layer_1_sound, -1)
-    # layer_2.play(layer_2_sound, -1)
-    # layer_3.play(layer_3_sound, -1)
-
     bullet_icon = load_image('bullet\\bullet.png')
 
     all_sprites = pygame.sprite.Group()
@@ -61,7 +44,7 @@ def start_game():
     player_group = pygame.sprite.GroupSingle()
     camera = Camera(screen)
 
-    level = Level(load_image('maps\\test_lvl.png'), 'test_lvl', screen, camera)
+    level = Level(load_image('maps\\1.png'), '1', screen, camera)
     player = Player(load_image('player\\idle\\idle_r.png'), level.get_player_spawn(),
                     False,  # TODO: Переделать, тесты (level.get_story_mode())
                     all_sprites, camera, player_group)
