@@ -95,6 +95,13 @@ class Entity(pygame.sprite.Sprite):
         elif name == 'idle_l':
             self.image = self.frames['idle_l'].copy()
 
+        if name == 'jump_r':
+            self.direction.y = self.jump_power
+            self.image = self.frames['jump_r'][int(self.cur_frame)].copy()
+        elif name == 'jump_l':
+            self.direction.y = self.jump_power
+            self.image = self.frames['jump_l'][int(self.cur_frame)].copy()
+
         # TODO: посмотри на ходьбу влево и на ходьбу вправо. Вроде я отцентровал X, но это вообще не помогло(
         self.rect = self.image.get_rect(midbottom=self.map_rect.midbottom)
 
@@ -148,7 +155,9 @@ class Player(Entity):
             'idle_r': load_func('player\\idle\\idle_r.png'),
             'idle_l': load_func('player\\idle\\idle_l.png'),
             'walk_r': make_anim_list(load_func, 'player\\walk'),
-            'walk_l': make_anim_list(load_func, 'player\\walk', True)
+            'walk_l': make_anim_list(load_func, 'player\\walk', True),
+            'jump_r': make_anim_list(load_func, 'player\\jump'),
+            'jump_l': make_anim_list(load_func, 'player\\jump', True)
         }
 
     def damage(self, value):
@@ -184,7 +193,10 @@ class Player(Entity):
             self.direction.x = 0
 
         if keys[pygame.K_UP] or keys[pygame.K_w] or keys[pygame.K_SPACE]:
-            self.jump()
+            if self.last_keys == 1:
+                self.update_anim('jump_r')
+            elif self.last_keys == -1:
+                self.update_anim('jump_l')
 
         if keys[pygame.K_LSHIFT] and pygame.time.get_ticks() - self.last_shift_time > 2000:
             if self.last_keys == 1:
