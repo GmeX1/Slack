@@ -77,15 +77,19 @@ def start_game(level_name):
                     elif player.last_keys == -1:
                         player.last_anim = 'shoot_l'
                         player.update_anim('shoot_l')
-                    Bullet(bullet_icon, (player.map_rect.centerx,player.map_rect.centery - 20 ), player.last_keys, 'player',
+                    Bullet(bullet_icon, (player.map_rect.centerx, player.map_rect.centery - 20), player.last_keys,
+                           'player',
                            all_sprites, camera)
                     shoot_timer = pygame.time.get_ticks()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     music.pause()
+                    pygame.mixer.pause()
                     pause.set_last_frame(screen.copy())
                     menu_open = pause.start()
                     if menu_open:
+                        pygame.mixer.stop()
+                        pygame.mixer.music.unload()
                         return 'menu'
                     fps_switch = cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()[0][0]
                     music.update_volume()
@@ -109,7 +113,9 @@ def start_game(level_name):
             death_screen.set_last_frame(screen.copy())
             death_screen.set_stats(player.kills, time_convert(pygame.time.get_ticks()))
             music.pause()
+            pygame.mixer.fadeout(150)
             menu_open = death_screen.start()
+            pygame.mixer.fadeout(150)
             if menu_open:
                 return 'menu'
             else:

@@ -1,5 +1,6 @@
 import pygame
 
+from init import sounds
 from scripts import make_anim_list
 
 
@@ -29,6 +30,7 @@ class UI:
         self.rage_value = 0
         self.blink_rage = 0
         self.deplete = False
+        self.rage_channel = None
         self.overlay = pygame.transform.smoothscale(load_func('overlay\\vignette.png'), size)
         self.overlay_opacity = 0
 
@@ -53,6 +55,8 @@ class UI:
     def activate_rage(self):
         if self.rage_value == 100:
             self.deplete = True
+            self.rage_channel = pygame.mixer.find_channel()
+            self.rage_channel.play(sounds['rage_on'])
             self.overlay_opacity = 1
 
     def remove_hp(self):
@@ -74,6 +78,9 @@ class UI:
             if self.rage_value <= 0:
                 self.rage_value = 0
                 self.deplete = False
+                if self.rage_channel is not None:
+                    self.rage_channel.fadeout(3)
+                    self.rage_channel = None
 
         if not self.deplete and self.overlay_opacity > 0:
             self.overlay_opacity -= 5

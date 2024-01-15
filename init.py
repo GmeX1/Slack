@@ -25,5 +25,6 @@ sounds = {
     'hover': pygame.mixer.Sound('data\\sounds\\hover.wav'),
     'shoot': pygame.mixer.Sound('data\\sounds\\shoot.wav'),  # Пока что звук один, ибо оружий как таковых нет
     'death_screen': pygame.mixer.Sound('data\\sounds\\death_screen.wav'),
+    'rage_on': pygame.mixer.Sound('data\\sounds\\rage_activate.wav')
 }
 set_effects_volume()
