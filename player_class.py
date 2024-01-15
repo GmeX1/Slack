@@ -110,7 +110,7 @@ class Player(Entity):
         self.dashing = False
         self.raging = False
 
-        self.step = 2
+        self.step_frame = 2
 
         self.base_speed = 8 if not self.walk_mode else 2
         self.speed = self.base_speed
@@ -242,12 +242,12 @@ class Player(Entity):
                         self.cur_frame %= len(self.frames['run_l'])
                         self.image = self.frames['run_l'][int(self.cur_frame)].copy()
 
-                if int(self.cur_frame) == 2 and self.step == 6:
+                if int(self.cur_frame) == 2 and self.step_frame == 7:
                     pygame.mixer.find_channel().play(steps_1[random.randint(0, len(steps_1))])
-                    self.step = 2
-                elif int(self.cur_frame) == 6 and self.step == 2:
+                    self.step_frame = 2
+                elif int(self.cur_frame) == 7 and self.step_frame == 2:
                     pygame.mixer.find_channel().play(steps_1[random.randint(0, len(steps_1))])
-                    self.step = 6
+                    self.step_frame = 7
 
             elif name.startswith('jump') or self.last_anim.startswith('jump'):
                 # TODO: Свернул условие, чтобы позже исправить баг.

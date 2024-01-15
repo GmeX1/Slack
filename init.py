@@ -13,7 +13,7 @@ def set_effects_volume():
 
     volume = volume - 0.25
     if volume < 0:
-        volume = 0
+        volume = 0.05
     for sound in steps_1:
         sound.set_volume(volume)
     for sound in steps_2:
@@ -27,7 +27,7 @@ def steps_init(folder):
     return out
 
 
-pygame.mixer.pre_init(44100, -16, 8, 512)
+pygame.mixer.pre_init(44100, -16, 2, 512)
 pygame.init()
 
 if not os.path.exists(os.path.join('data', 'db', 'gamedata.db')):
