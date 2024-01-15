@@ -275,6 +275,7 @@ class DeathScreen(Menu):  # TODO: Сделать анимацию покраси
         self.show = True
         self.generate_menu()
         clock = pygame.time.Clock()
+        pygame.mixer.find_channel().play(sounds['death_screen'])
         while self.show:
             mouse_click_pos = (-1, -1)
             for event in pygame.event.get():

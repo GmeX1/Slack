@@ -108,6 +108,7 @@ def start_game(level_name):
         if player.hp <= 0:
             death_screen.set_last_frame(screen.copy())
             death_screen.set_stats(player.kills, time_convert(pygame.time.get_ticks()))
+            music.pause()
             menu_open = death_screen.start()
             if menu_open:
                 return 'menu'

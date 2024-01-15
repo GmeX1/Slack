@@ -1,6 +1,6 @@
 import pygame
 from numpy import random
-
+from init import sounds
 from particles import BloodParticle
 from scripts import make_anim_list
 
@@ -313,6 +313,7 @@ class Bullet(Entity):
         #  высокая, то она с большим шансом просто "перешагнёт" врага и коллизии формально не будет
         self.base_speed = 10
         self.direction.x = last
+        pygame.mixer.find_channel().play(sounds['shoot'])
 
     def kill_entity(self, entities):
         if pygame.sprite.spritecollide(self, entities, False):
