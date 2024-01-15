@@ -2,8 +2,8 @@ import os
 import sqlite3
 
 import pygame
-
-from scripts import database_create
+from scripts import database_create, load_image
+from small_logic_classes import Camera
 
 
 def set_effects_volume():
@@ -16,8 +16,6 @@ def set_effects_volume():
         volume = 0.05
     for sound in steps_1:
         sound.set_volume(volume)
-    for sound in steps_2:
-        sound.set_volume(volume)
 
 
 def steps_init(folder):
@@ -29,6 +27,19 @@ def steps_init(folder):
 
 pygame.mixer.pre_init(44100, -16, 2, 512)
 pygame.init()
+# TODO: Превышает лимит каналов
+pygame.mixer.set_num_channels(12)
+
+pygame.display.set_caption('Slack')
+info = pygame.display.Info()
+# screen = pygame.display.set_mode((info.current_w, info.current_h), pygame.FULLSCREEN)
+screen = pygame.display.set_mode((info.current_w - 100, info.current_h - 100))  # На время тестов лучше оконный режим
+bullet_icon = load_image('bullet\\bullet.png')
+
+camera = Camera(screen)
+all_sprites = pygame.sprite.Group()
+player_group = pygame.sprite.GroupSingle()
+enemies = pygame.sprite.Group()
 
 if not os.path.exists(os.path.join('data', 'db', 'gamedata.db')):
     db = database_create()
@@ -43,5 +54,5 @@ sounds = {
     'rage_on': pygame.mixer.Sound('data\\sounds\\rage_activate.wav')
 }
 steps_1 = steps_init('steps_floor')
-steps_2 = steps_init('steps_tile')
+
 set_effects_volume()

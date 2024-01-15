@@ -1,20 +1,20 @@
 import pygame
 
-from init import sounds
-from scripts import make_anim_list
+from init import sounds, screen
+from scripts import make_anim_list, load_image
 
 
 class UI:
-    def __init__(self, screen, size, load_func):
+    def __init__(self):
         self.screen = screen
-        self.surface = pygame.Surface(size, pygame.SRCALPHA)
+        self.surface = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
         self.surface.convert_alpha()
 
-        self.hp_icon = load_func('icons\\hp_bigger.png')
+        self.hp_icon = load_image('icons\\hp_bigger.png')
         self.destroy_anim = {
             'draw': False,
             'frame': -1,
-            'images': make_anim_list(load_func, 'icons\\hp_no_fire')
+            'images': make_anim_list('icons\\hp_no_fire')
         }
         self.hp_amount = 0
 
@@ -31,7 +31,7 @@ class UI:
         self.blink_rage = 0
         self.deplete = False
         self.rage_channel = None
-        self.overlay = pygame.transform.smoothscale(load_func('overlay\\vignette.png'), size)
+        self.overlay = pygame.transform.smoothscale(load_image('overlay\\vignette.png'), screen.get_size())
         self.overlay_opacity = 0
 
     def kill(self, rage):

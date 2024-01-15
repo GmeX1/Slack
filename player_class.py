@@ -1,9 +1,9 @@
 import pygame
 from numpy import random
 
-from init import sounds, steps_1
+from init import sounds, steps_1, bullet_icon, all_sprites, player_group, camera, enemies
 from particles import BloodParticle
-from scripts import make_anim_list
+from scripts import make_anim_list, load_image
 
 
 class Entity(pygame.sprite.Sprite):
@@ -31,19 +31,6 @@ class Entity(pygame.sprite.Sprite):
             'top': False,
             'bottom': False,
             'collision_x': 0
-        }
-
-    def import_anims(self, load_func):
-        self.frames = {
-            'idle_r': load_func(),
-            'idle_l': load_func(None),
-            'walk_r': make_anim_list(load_func, None),
-            'walk_l': make_anim_list(load_func, None, True),
-            'jump_r': make_anim_list(load_func, None),
-            'jump_l': make_anim_list(load_func, None, True),
-            'shoot_r': make_anim_list(load_func, None),
-            'shoot_l': make_anim_list(load_func, None, True),
-
         }
 
     def jump(self):
@@ -93,8 +80,8 @@ class Entity(pygame.sprite.Sprite):
 
 
 class Player(Entity):
-    def __init__(self, image, pos, walk=False, *groups):
-        super().__init__(image, pos, *groups)
+    def __init__(self, pos, walk=False):
+        super().__init__(load_image('player\\idle\\idle_r.png'), pos, all_sprites, player_group, camera)
         self.animation_speed = 0.15 if walk else 0.15 * 2
         self.walk_mode = walk
         self.last_keys = 1
@@ -116,7 +103,7 @@ class Player(Entity):
         self.speed = self.base_speed
         self.base_jump_power = -6 if not self.walk_mode else -3
         self.jump_power = self.base_jump_power
-
+        self.import_anims()
     def boost(self):  # TODO: Сделать уменьшение кулдаунов
         if self.combo > 1 and self.raging:
             mult = self.combo if self.combo < 6 else 7
@@ -132,20 +119,20 @@ class Player(Entity):
             self.jump_power = self.base_jump_power - 3
             self.inv_time = 1500
 
-    def import_anims(self, load_func):
+    def import_anims(self):
         self.frames = {
-            'idle_r': load_func('player\\idle\\idle_r.png'),
-            'idle_l': load_func('player\\idle\\idle_l.png'),
-            'walk_r': make_anim_list(load_func, 'player\\walk'),
-            'walk_l': make_anim_list(load_func, 'player\\walk', True),
-            'run_r': make_anim_list(load_func, 'player\\run'),
-            'run_l': make_anim_list(load_func, 'player\\run', True),
-            'jump_r': make_anim_list(load_func, 'player\\jump'),
-            'jump_l': make_anim_list(load_func, 'player\\jump', True),
-            'shoot_r': make_anim_list(load_func, 'player\\shoot'),
-            'shoot_l': make_anim_list(load_func, 'player\\shoot', True),
-            'dash_r': load_func('player\\misc\\dash.png'),
-            'dash_l': load_func('player\\misc\\dash_l.png'),
+            'idle_r': load_image('player\\idle\\idle_r.png'),
+            'idle_l': load_image('player\\idle\\idle_l.png'),
+            'walk_r': make_anim_list('player\\walk'),
+            'walk_l': make_anim_list('player\\walk', True),
+            'run_r': make_anim_list('player\\run'),
+            'run_l': make_anim_list('player\\run', True),
+            'jump_r': make_anim_list('player\\jump'),
+            'jump_l': make_anim_list('player\\jump', True),
+            'shoot_r': make_anim_list('player\\shoot'),
+            'shoot_l': make_anim_list('player\\shoot', True),
+            'dash_r': load_image('player\\misc\\dash.png'),
+            'dash_l': load_image('player\\misc\\dash_l.png'),
         }
 
     def damage(self, value):
@@ -318,8 +305,8 @@ class Player(Entity):
 
 
 class Bullet(Entity):
-    def __init__(self, image, pos, last, initiator, *groups):
-        super().__init__(image, pos, *groups)
+    def __init__(self, pos, last, initiator):
+        super().__init__(bullet_icon, pos, all_sprites, camera)
         self.check_for = 'player' if initiator == 'enemy' else 'enemy'
         self.map_rect = self.rect.copy()
         # TODO: Кажется, придётся либо пулю делать больше, либо делать трассировку попадания :) Если скорость пули
@@ -341,7 +328,7 @@ class Bullet(Entity):
             else:
                 for entity in pygame.sprite.spritecollide(self, entities, False, collided=pygame.sprite.collide_mask):
                     entity.hp -= 1
-                    [BloodParticle(entity.rect.center, *self.groups()) for _ in range(random.randint(5, 13))]
+                    [BloodParticle(entity.rect.center, all_sprites, camera) for _ in range(random.randint(5, 13))]
                     if entity.hp <= 0:
                         entity.kill()
                         self.kill()
@@ -369,8 +356,8 @@ class Bullet(Entity):
 
 
 class Enemy(Entity):
-    def __init__(self, image, pos, player, built_icon, *groups):
-        super().__init__(image, pos, *groups)
+    def __init__(self, pos, player):
+        super().__init__(pygame.Surface((10, 51)), pos, all_sprites, enemies, camera)
         self.image.fill((0, 0, 255))
         self.mask = pygame.mask.from_surface(self.image)
         self.map_rect = self.rect.copy()
@@ -378,7 +365,6 @@ class Enemy(Entity):
         self.hp = 2
         self.base_speed = 2
         self.speed = self.base_speed
-        self.built_icon = built_icon
         self.standing_time = 0
         self.choose_direction()
         self.time_to_change_direction = random.uniform(1, 4)
@@ -420,7 +406,7 @@ class Enemy(Entity):
     def enemy_attack(self):
         if abs(self.player.map_rect.x - self.map_rect.x) < 50 and (self.player.map_rect.y + 50) >= self.map_rect.y \
                 and pygame.time.get_ticks() - self.shoot_timer > 600:
-            Bullet(self.built_icon, self.map_rect.center, self.last_direction_x, 'enemy', *self.groups())
+            Bullet(self.map_rect.center, self.last_direction_x, 'enemy')
 
             self.shoot_timer = pygame.time.get_ticks()
 

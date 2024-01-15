@@ -1,5 +1,6 @@
 import os
 import sqlite3
+import sys
 
 import pygame
 from PIL import Image, ImageDraw
@@ -34,6 +35,29 @@ def time_convert(msecs):
     return f'{hours:02d}:{minutes:02d}:{seconds:02d}'
 
 
+def load_image(name, colorkey=None):
+    path = ['data']
+    if '\\' in name:
+        [path.append(i) for i in name.split('\\')]
+    else:
+        path.append(name)
+    fullname = os.path.join(*path)
+
+    if not os.path.isfile(fullname):
+        print(f"File '{fullname}' not found")
+        sys.exit()
+    image = pygame.image.load(fullname)
+
+    if colorkey is not None:
+        image = image.convert()
+        if colorkey == -1:
+            colorkey = image.get_at((0, 0))
+        image.set_colorkey(colorkey)
+    else:
+        image = image.convert_alpha()
+    return image
+
+
 def generate_tiles():
     for path, _, files in os.walk('data\\maps'):
         for file in files:
@@ -51,12 +75,12 @@ def delete_all_tiles():
                 os.remove(os.path.join(path, file))
 
 
-def make_anim_list(load_func, path, flip=False):
+def make_anim_list(path, flip=False):
     """Функция для получения списка поверхностей из определённой директории"""
     anim_list = []
     for _, __, image_files in os.walk('data\\' + path):
         for image in image_files:
-            anim_list.append(pygame.transform.flip(load_func(f'{path}\\' + image), flip_x=flip, flip_y=False))
+            anim_list.append(pygame.transform.flip(load_image(f'{path}\\' + image), flip_x=flip, flip_y=False))
     return anim_list
 
 

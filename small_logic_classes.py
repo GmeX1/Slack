@@ -3,12 +3,12 @@ import os
 import pygame
 
 # from numpy.random import randint
-from scripts import split_image
+from scripts import split_image, load_image
 
 
 class Level:
-    def __init__(self, image, level_name, surface, camera):
-        self.image = image
+    def __init__(self, level_name, camera, surface):
+        self.image = load_image(f'maps\\{level_name}.png')
         self.surface = surface
         self.tiles = pygame.sprite.Group()
 

@@ -3,13 +3,13 @@ from sys import exit as sys_exit
 import pygame
 from numpy.random import randint
 
-from init import set_effects_volume, sounds
+from init import set_effects_volume, sounds, screen,db
 from particles import SparkParticle
 from scripts import show_fps
 
 
 class Menu:
-    def __init__(self, surface, db):
+    def __init__(self):
         self.db = db
         self.cur = db.cursor()
         self.fps_switch = self.cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()
@@ -20,7 +20,7 @@ class Menu:
             self.fps_switch = self.fps_switch[0][0]
 
         self.show = True
-        self.surface = surface
+        self.surface = screen
         self.font_big = pygame.font.Font('data\\fonts\\better-vcr.ttf', 80)
         self.font_medium = pygame.font.Font('data\\fonts\\better-vcr.ttf', 64)
         self.font_small = pygame.font.Font('data\\fonts\\better-vcr.ttf', 52)
@@ -43,7 +43,6 @@ class Menu:
             if 'volume' in self.buttons[i]:
                 self.buttons[i] = ButtonSlider(
                     self.buttons[i],
-                    self.db,
                     self.font_medium,
                     self.buttons[i],
                     (self.surface.get_width() / 2, self.surface.get_height() / 10 * (i + 4)),
@@ -51,7 +50,6 @@ class Menu:
             elif self.buttons[i].endswith('fps'):
                 self.buttons[i] = ButtonSlider(
                     self.buttons[i],
-                    self.db,
                     self.font_medium,
                     self.buttons[i],
                     (self.surface.get_width() / 2, self.surface.get_height() / 10 * (i + 4)),
@@ -147,14 +145,14 @@ class Menu:
 
 
 class Pause(Menu):  # TODO: накладывается один фпс на другой
-    def __init__(self, surface, db):
-        super().__init__(surface, db)
+    def __init__(self):
+        super().__init__()
         self.last_frame = self.surface.copy()
         self.last_frame.set_alpha(150)
         self.call_menu = False
 
-    def set_last_frame(self, screen):
-        self.last_frame = screen
+    def set_last_frame(self):
+        self.last_frame = screen.copy()
         self.last_frame.set_alpha(125)
 
     def generate_menu(self):
@@ -222,9 +220,9 @@ class Pause(Menu):  # TODO: накладывается один фпс на др
         return False
 
 
-class DeathScreen(Menu):  # TODO: Сделать анимацию покрасивее
-    def __init__(self, surface, db):
-        self.last_frame = surface.copy()
+class DeathScreen(Menu):
+    def __init__(self):
+        self.last_frame = screen.copy()
         self.call_menu = False
         self.fade_time = 3000
         self.start_tick = pygame.time.get_ticks()
@@ -233,10 +231,10 @@ class DeathScreen(Menu):  # TODO: Сделать анимацию покраси
         self.max_combo = 0
         self.live_time = '00:00:00'
 
-        super().__init__(surface, db)
+        super().__init__()
 
-    def set_last_frame(self, screen):
-        self.last_frame = screen
+    def set_last_frame(self):
+        self.last_frame = screen.copy()
         self.fade_time = 3000
         self.start_tick = pygame.time.get_ticks()
 
@@ -384,7 +382,7 @@ class Button:
 
 
 class ButtonSlider(Button):
-    def __init__(self, name, db, font, text, pos=(0, 0), hover=True, draw_slide=''):
+    def __init__(self, name, font, text, pos=(0, 0), hover=True, draw_slide=''):
         super().__init__(font, text, pos, hover)
         self.db = db
         self.cur = self.db.cursor()
