@@ -290,6 +290,8 @@ class Player(Entity):
         self.direction.y += 0.2
         self.map_rect.y += self.direction.y
         self.check_vertical_collisions(kwargs['tiles'])
+
+        self.get_keys()
         if self.last_anim.startswith('jump'):
             if self.collisions['bottom']:
                 self.last_anim = ''
@@ -300,7 +302,6 @@ class Player(Entity):
                 self.image.set_alpha(255)
             else:
                 self.image.set_alpha(100 + (1500 - self.inv_time) / (1500 / 125))
-        self.get_keys()
         self.start_tick = pygame.time.get_ticks()
 
 
