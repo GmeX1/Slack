@@ -1,6 +1,7 @@
 import pygame
 from numpy import random
-from init import sounds
+
+from init import sounds, steps_1
 from particles import BloodParticle
 from scripts import make_anim_list
 
@@ -94,7 +95,7 @@ class Entity(pygame.sprite.Sprite):
 class Player(Entity):
     def __init__(self, image, pos, walk=False, *groups):
         super().__init__(image, pos, *groups)
-        self.animation_speed = 0.15 if walk else 0.15 * 4
+        self.animation_speed = 0.15 if walk else 0.15 * 2
         self.walk_mode = walk
         self.last_keys = 1
         self.last_anim = ''
@@ -108,6 +109,8 @@ class Player(Entity):
         self.last_shift_time = 0
         self.dashing = False
         self.raging = False
+
+        self.step = 2
 
         self.base_speed = 8 if not self.walk_mode else 2
         self.speed = self.base_speed
@@ -219,24 +222,33 @@ class Player(Entity):
                     self.speed = self.base_speed
                 self.image = self.frames['shoot_l'][int(self.cur_frame)].copy()
         else:
-            if name == 'right' and not self.last_anim.startswith('jump'):
-                self.last_anim = 'right'
-                self.cur_frame += self.animation_speed
-                if self.walk_mode:
-                    self.cur_frame %= len(self.frames['walk_r'])
-                    self.image = self.frames['walk_r'][int(self.cur_frame)].copy()
-                else:
-                    self.cur_frame %= len(self.frames['run_r'])
-                    self.image = self.frames['run_r'][int(self.cur_frame)].copy()
-            elif name == 'left' and not self.last_anim.startswith('jump'):
-                self.last_anim = 'left'
-                self.cur_frame += self.animation_speed
-                if self.walk_mode:
-                    self.cur_frame %= len(self.frames['walk_l'])
-                    self.image = self.frames['walk_l'][int(self.cur_frame)].copy()
-                else:
-                    self.cur_frame %= len(self.frames['run_l'])
-                    self.image = self.frames['run_l'][int(self.cur_frame)].copy()
+            if (name == 'left' or name == 'right') and not self.last_anim.startswith('jump'):
+                if name == 'right':
+                    self.last_anim = 'right'
+                    self.cur_frame += self.animation_speed
+                    if self.walk_mode:
+                        self.cur_frame %= len(self.frames['walk_r'])
+                        self.image = self.frames['walk_r'][int(self.cur_frame)].copy()
+                    else:
+                        self.cur_frame %= len(self.frames['run_r'])
+                        self.image = self.frames['run_r'][int(self.cur_frame)].copy()
+                elif name == 'left':
+                    self.last_anim = 'left'
+                    self.cur_frame += self.animation_speed
+                    if self.walk_mode:
+                        self.cur_frame %= len(self.frames['walk_l'])
+                        self.image = self.frames['walk_l'][int(self.cur_frame)].copy()
+                    else:
+                        self.cur_frame %= len(self.frames['run_l'])
+                        self.image = self.frames['run_l'][int(self.cur_frame)].copy()
+
+                if int(self.cur_frame) == 2 and self.step == 6:
+                    pygame.mixer.find_channel().play(steps_1[random.randint(0, len(steps_1))])
+                    self.step = 2
+                elif int(self.cur_frame) == 6 and self.step == 2:
+                    pygame.mixer.find_channel().play(steps_1[random.randint(0, len(steps_1))])
+                    self.step = 6
+
             elif name.startswith('jump') or self.last_anim.startswith('jump'):
                 # TODO: Свернул условие, чтобы позже исправить баг.
                 #  Сам баг: если прыгнуть вправо и пойти влево (или наоборот), персонаж не поворачивается

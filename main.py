@@ -54,8 +54,8 @@ def start_game(level_name):
     player.import_anims(load_image)
     camera.get_map_image(level.image)
 
-    [Enemy(pygame.Surface((10, 50)), i, player, bullet_icon,
-           all_sprites, enemies, camera) for i in level.get_enemies_pos()]
+    # [Enemy(pygame.Surface((10, 50)), i, player, bullet_icon,
+    #        all_sprites, enemies, camera) for i in level.get_enemies_pos()]
 
     cur = db.cursor()
     fps_switch = cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()[0][0]
