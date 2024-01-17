@@ -79,6 +79,7 @@ def make_anim_list(path, flip=False):
     """Функция для получения списка поверхностей из определённой директории"""
     anim_list = []
     for _, __, image_files in os.walk('data\\' + path):
+        image_files.sort()
         for image in image_files:
             anim_list.append(pygame.transform.flip(load_image(f'{path}\\' + image), flip_x=flip, flip_y=False))
     return anim_list

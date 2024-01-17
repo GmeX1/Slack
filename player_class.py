@@ -208,6 +208,11 @@ class Player(Entity):
                     self.last_anim = ''
                     self.speed = self.base_speed
                 self.image = self.frames['shoot_l'][int(self.cur_frame)].copy()
+
+            if int(self.cur_frame) == 5 and self.step_frame == 1:
+                Bullet((self.map_rect.centerx, self.map_rect.centery - 20), self.last_keys,
+                       'player')
+                self.step_frame = 2
         else:
             if (name == 'left' or name == 'right') and not self.last_anim.startswith('jump'):
                 if name == 'right':
@@ -242,7 +247,7 @@ class Player(Entity):
                 if name == 'jump_r' or self.last_anim == 'jump_r':
                     self.last_anim = 'jump_r'
                     self.jump()
-                    self.cur_frame += self.animation_speed
+                    self.cur_frame += 0.06
                     if self.cur_frame >= len(self.frames['jump_r']):
                         self.cur_frame = len(self.frames['jump_r']) - 1
                     self.image = self.frames['jump_r'][int(self.cur_frame)].copy()

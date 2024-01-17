@@ -35,14 +35,13 @@ def start_game(level_name):
                 run = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 3 and pygame.time.get_ticks() - shoot_timer > 500 and player.collisions['bottom']:
+                    player.step_frame = 1
                     if player.last_keys == 1:
                         player.last_anim = 'shoot_r'
                         player.update_anim('shoot_r')
                     elif player.last_keys == -1:
                         player.last_anim = 'shoot_l'
                         player.update_anim('shoot_l')
-                    Bullet((player.map_rect.centerx, player.map_rect.centery - 20), player.last_keys,
-                           'player')
                     shoot_timer = pygame.time.get_ticks()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
