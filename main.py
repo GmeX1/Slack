@@ -35,6 +35,7 @@ def start_game(level_name):
                 run = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 3 and pygame.time.get_ticks() - shoot_timer > 500 and player.collisions['bottom']:
+                    player.cur_frame = 0
                     player.step_frame = 1
                     if player.last_keys == 1:
                         player.last_anim = 'shoot_r'

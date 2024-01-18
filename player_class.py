@@ -324,6 +324,7 @@ class Player(Entity):
                     if enemy.hp <= 0:
                         enemy.kill()
                         self.kill_enemy()
+            # TODO: Парирование (сравниваться с пулями)
 
     def update(self, **kwargs):
         if not self.dashing:
