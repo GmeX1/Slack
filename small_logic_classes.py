@@ -3,7 +3,7 @@ import os
 import pygame
 
 # from numpy.random import randint
-from scripts import split_image, load_image
+from scripts import load_image, split_image
 
 
 class Level:

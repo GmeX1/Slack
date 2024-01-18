@@ -1,9 +1,9 @@
 import pygame
 from numpy import random
 
-from init import sounds, steps_1, bullet_icon, all_sprites, player_group, camera, enemies
-from particles import BloodParticle
-from scripts import make_anim_list, load_image
+from init import all_sprites, bullet_icon, camera, enemies, player_group, sounds, steps_1
+from particles import BloodParticle, DashFX
+from scripts import load_image, make_anim_list
 
 
 class Entity(pygame.sprite.Sprite):
@@ -98,12 +98,14 @@ class Player(Entity):
         self.raging = False
 
         self.step_frame = 2
+        self.dash_effect = DashFX(camera)
 
         self.base_speed = 8 if not self.walk_mode else 2
         self.speed = self.base_speed
         self.base_jump_power = -6 if not self.walk_mode else -3
         self.jump_power = self.base_jump_power
         self.import_anims()
+
     def boost(self):  # TODO: Сделать уменьшение кулдаунов
         if self.combo > 1 and self.raging:
             mult = self.combo if self.combo < 6 else 7
@@ -183,9 +185,9 @@ class Player(Entity):
             elif self.last_keys == -1:
                 self.direction.x = -1
                 self.update_anim('dash_l')
-                # Настроить под анимцию
             self.speed += 100
             self.dashing = True
+            self.dash_effect.set_start(self.image.copy(), (self.map_rect.x, self.map_rect.y + 10))
             self.last_shift_time = pygame.time.get_ticks()
         elif pygame.time.get_ticks() - self.last_shift_time <= 2000:
             self.speed = self.base_speed
@@ -286,6 +288,7 @@ class Player(Entity):
                 self.speed = self.base_speed
                 self.jump_power = self.base_jump_power
                 self.combo = -1
+        self.dash_effect.draw()
 
         if self.last_anim.startswith('shoot'):
             self.speed = 0
@@ -294,6 +297,9 @@ class Player(Entity):
         self.direction.y += 0.2
         self.map_rect.y += self.direction.y
         self.check_vertical_collisions(kwargs['tiles'])
+
+        if self.dashing and self.dash_effect.end_pos is None:
+            self.dash_effect.set_end((self.map_rect.x, self.map_rect.y + 10))
 
         self.get_keys()
         if self.last_anim.startswith('jump'):

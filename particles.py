@@ -91,3 +91,54 @@ class SparkParticle(pygame.sprite.Sprite):
 
         if self.rect.bottom < 0:
             self.kill()
+
+
+class DashFX:
+    class BaseSprite(pygame.sprite.Sprite):
+        def __init__(self, image, pos, *groups):
+            super().__init__(*groups)
+            self.image = image
+            self.rect = image.get_rect().move(pos)
+            self.opacity = 255
+
+        def lower_opacity(self):
+            self.opacity -= 3.5
+            if self.opacity < 0:
+                self.kill()
+            else:
+                self.image.set_alpha(self.opacity)
+
+    def __init__(self, camera):
+        self.images = list()
+        self.camera = camera
+        self.image = None
+        self.start_pos = None
+        self.end_pos = None
+
+    def set_start(self, image, pos):
+        self.image = image
+        self.image.set_alpha(255)
+        self.start_pos = pos
+        # self.images.append(DashFX.BaseSprite(image, pos, self.camera))
+
+    def set_end(self, pos):
+        self.end_pos = pos
+        max_offset_x = self.end_pos[0] - self.start_pos[0]
+        max_offset_y = self.end_pos[1] - self.start_pos[1]
+        for i in range(10):
+            if i > 0:
+                pos = (self.start_pos[0] + (max_offset_x / 10) * i, self.start_pos[1] + (max_offset_y / 10) * i)
+            else:
+                pos = (self.start_pos[0], self.start_pos[1])
+            self.images.append(DashFX.BaseSprite(self.image, pos, self.camera))
+        self.start_pos = self.end_pos = self.image = None
+
+    def clear_effect(self):
+        self.images.clear()
+
+    def draw(self):
+        if len(self.images) > 0:
+            for image in self.images:
+                image.lower_opacity()
+                if not image.alive():
+                    self.images.remove(image)
