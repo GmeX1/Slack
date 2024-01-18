@@ -274,6 +274,14 @@ class Player(Entity):
                     self.cur_frame += 0.15
                     self.cur_frame %= len(self.frames['punch_l'])
                     self.image = self.frames['punch_l'][int(self.cur_frame)].copy()
+
+                if int(self.cur_frame) == self.step_frame == 1:
+                    self.step_frame = 4
+                    self.attack()
+                elif int(self.cur_frame) == self.step_frame == 4:
+                    self.step_frame = 1
+                    self.attack()
+
             elif name == 'idle_r':
                 self.last_anim = 'idle_r'
                 self.image = self.frames['idle_r'].copy()
@@ -300,6 +308,22 @@ class Player(Entity):
                 self.rect = self.image.get_rect(bottomleft=self.map_rect.bottomleft)
             else:
                 self.rect = self.image.get_rect(midbottom=self.map_rect.midbottom)
+
+    def attack(self):
+        rect = None
+        if self.last_anim.endswith('r'):
+            rect = pygame.Rect(self.rect.topleft, (self.rect.width + 30, self.rect.height))
+        elif self.last_anim.endswith('l'):
+            rect = pygame.Rect((self.rect.x - 30, self.rect.y), (self.rect.width + 30, self.rect.height))
+
+        if rect is not None:
+            for enemy in enemies:
+                if rect.colliderect(enemy.rect):
+                    enemy.hp -= 1
+                    [BloodParticle(enemy.rect.center, all_sprites, camera) for _ in range(random.randint(5, 13))]
+                    if enemy.hp <= 0:
+                        enemy.kill()
+                        self.kill_enemy()
 
     def update(self, **kwargs):
         if not self.dashing:
