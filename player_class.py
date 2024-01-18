@@ -277,8 +277,18 @@ class Player(Entity):
                 self.last_anim = 'dash_l'
                 self.image = self.frames['dash_l'].copy()
 
-        # TODO: посмотри на ходьбу влево и на ходьбу вправо. Вроде я отцентровал X, но это вообще не помогло(
-        self.rect = self.image.get_rect(midbottom=self.map_rect.midbottom)
+        if self.last_anim.startswith('shoot'):
+            if self.last_anim.endswith('r'):
+                self.rect = self.image.get_rect(bottomleft=self.map_rect.bottomleft)
+            else:
+                self.rect = self.image.get_rect(bottomright=self.map_rect.bottomright)
+        else:
+            if name.endswith('l'):
+                self.rect = self.image.get_rect(bottomright=self.map_rect.bottomright)
+            elif name.endswith('r'):
+                self.rect = self.image.get_rect(bottomleft=self.map_rect.bottomleft)
+            else:
+                self.rect = self.image.get_rect(midbottom=self.map_rect.midbottom)
 
     def update(self, **kwargs):
         if not self.dashing:

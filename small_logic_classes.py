@@ -127,10 +127,7 @@ class Camera(pygame.sprite.Group):
             self.pre_surface.blit(self.map_image, pos)
 
         for sprite in self.sprites():
-            if hasattr(sprite, 'map_rect'):
-                pos = sprite.map_rect.topleft - self.offset
-            else:
-                pos = sprite.rect.topleft - self.offset
+            pos = sprite.rect.topleft - self.offset
             if sprite.__class__ != Tile:
                 # Небольшая проверка для оптимизации (Culling)
                 if (pos[0] < self.surface.get_width() and pos[1] < self.surface.get_height()
