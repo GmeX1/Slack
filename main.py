@@ -1,73 +1,136 @@
-import pygame
-import os
-import sys
-from level_class import Level
-from player_class import Player
-
-pygame.init()
-pygame.display.set_caption('Slack')
-info = pygame.display.Info()
-# screen = pygame.display.set_mode((info.current_w, info.current_h), pygame.FULLSCREEN)
-screen = pygame.display.set_mode((info.current_w - 100, info.current_h - 100))  # На время тестов лучше оконный режим
+from UI_class import UI
+from init import *
+from menu_class import DeathScreen, Menu, Pause
+from music_class import Music
+from player_class import Enemy, Player
+from scripts import generate_tiles, show_fps, time_convert
+from small_logic_classes import Level
 
 
-def load_image(name, colorkey=None):
-    path = ['data']
-    if '\\' in name:
-        [path.append(i) for i in name.split('\\')]
-    else:
-        path.append(name)
-    fullname = os.path.join(*path)
+def start_game(level_name):
+    all_sprites.empty()
+    player_group.empty()
+    enemies.empty()
+    camera.empty()
 
-    if not os.path.isfile(fullname):
-        print(f"File '{fullname}' not found")
-        sys.exit()
-    image = pygame.image.load(fullname)
+    level = Level(level_name, camera, screen)
+    music = Music(level_name)
+    player = Player(level.get_player_spawn(),
+                    False)  # TODO: Переделать, тесты (level.get_story_mode())
+    camera.get_map_image(level.image)
 
-    if colorkey is not None:
-        image = image.convert()
-        if colorkey == -1:
-            colorkey = image.get_at((0, 0))
-        image.set_colorkey(colorkey)
-    else:
-        image = image.convert_alpha()
-    return image
+    [Enemy(i, player) for i in level.get_enemies_pos()]
 
+    cur = db.cursor()
+    fps_switch = cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()[0][0]
 
-if __name__ == '__main__':
-    all_sprites = pygame.sprite.Group()
-    level = Level(load_image('maps\\test_lvl.png'), 'test_lvl', screen)
-    player = Player(load_image('player/player_idle.png'), load_image('player/player_idle_mask.png'),
-                    level.get_player_spawn(),
-                    all_sprites)
+    ui.set_hp(player.hp)
 
     run = True
     clock = pygame.time.Clock()
+    shoot_timer = pygame.time.get_ticks()
     while run:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 3 and pygame.time.get_ticks() - shoot_timer > 500 and player.collisions['bottom']:
+                    player.cur_frame = 0
+                    player.step_frame = 1
+                    if player.last_keys == 1:
+                        player.last_anim = 'shoot_r'
+                        player.update_anim('shoot_r')
+                    elif player.last_keys == -1:
+                        player.last_anim = 'shoot_l'
+                        player.update_anim('shoot_l')
+                    shoot_timer = pygame.time.get_ticks()
+                if event.button == 1 and not player.dashing:
+                    player.cur_frame = 0
+                    player.step_frame = 1
+                    if player.last_keys == 1:
+                        player.last_anim = 'punch_r'
+                        player.update_anim('punch_r')
+                    elif player.last_keys == -1:
+                        player.last_anim = 'punch_l'
+                        player.update_anim('punch_l')
+            if event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 1 and player.last_anim.startswith('punch'):
+                    player.last_anim = ''
+
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    sys.exit()
-
-        # TODO: Имеется мелкий баг: движение влево приоритетнее. (Попробуй зажать вправо и затем нажать влево.
-        #  Потом наоборот. Разница на лицо)
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_a] or keys[pygame.K_LEFT]:
-            player.direction.x = -1
-        elif keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-            player.direction.x = 1
-        else:
-            player.direction.x = 0
-        if keys[pygame.K_UP] or keys[pygame.K_w] or keys[pygame.K_SPACE]:
-            player.jump()
-
-        all_sprites.update(tiles=level.tiles)
-        level.scroll(player)
+                    music.pause()
+                    pygame.mixer.pause()
+                    pause.set_last_frame()
+                    menu_open = pause.start()
+                    if menu_open:
+                        pygame.mixer.stop()
+                        pygame.mixer.music.unload()
+                        return 'menu'
+                    fps_switch = cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()[0][0]
+                    music.update_volume()
+                    music.resume()
+                if event.key == pygame.K_q:
+                    ui.activate_rage()
+                if event.key == pygame.K_h:  # TODO: Убрать. Для тестов.
+                    if player.hp > 0:
+                        player.hp -= 1
+                        ui.remove_hp()
+                if event.key == pygame.K_j:
+                    ui.kill(100)
+        all_sprites.update(tiles=level.tiles, enemies=enemies, player=player_group)
         screen.fill((0, 0, 0))
-        level.update()
-        all_sprites.draw(screen)
+        camera.draw_offset(player)
+
+        # Синхронизация действий игрока с UI
+        if player.hp < ui.hp_amount:
+            ui.remove_hp()
+        if player.hp <= 0:
+            death_screen.set_last_frame()
+            death_screen.set_stats(player.kills, time_convert(pygame.time.get_ticks()))
+            music.pause()
+            pygame.mixer.fadeout(150)
+            menu_open = death_screen.start()
+            pygame.mixer.fadeout(150)
+            if menu_open:
+                return 'menu'
+            else:
+                return 'restart'
+        if player.kills > ui.kills:
+            ui.kill(50)  # TODO: Сделать коэффициент
+        if ui.combo_timer:
+            if player.combo != ui.combo:
+                player.combo = ui.combo
+                death_screen.max_combo = max(ui.combo, death_screen.max_combo)
+        else:
+            player.combo = 0
+        if ui.deplete:
+            player.raging = True
+        else:
+            player.raging = False
+        ui.draw()
+
+        music.check_combo(player.combo)
+
+        if fps_switch:
+            show_fps(screen, clock)
         pygame.display.flip()
         clock.tick(100)
     pygame.quit()
+    return False
+
+
+if __name__ == '__main__':
+    ui = UI()
+    menu = Menu()
+    pause = Pause()
+    death_screen = DeathScreen()
+    menu.start()
+    generate_tiles()
+    answer = start_game('1')
+    while answer:
+        if answer == 'menu':
+            menu.start()
+        ui = UI()
+        death_screen = DeathScreen()
+        answer = start_game('1')  # Пока что игра просто перезапускается, ибо нет контрольных точек
