@@ -125,6 +125,8 @@ class Player(Entity):
         self.frames = {
             'idle_r': load_image('player\\idle\\idle_r.png'),
             'idle_l': load_image('player\\idle\\idle_l.png'),
+            'dash_r': load_image('player\\misc\\dash.png'),
+            'dash_l': load_image('player\\misc\\dash_l.png'),
             'walk_r': make_anim_list('player\\walk'),
             'walk_l': make_anim_list('player\\walk', True),
             'run_r': make_anim_list('player\\run'),
@@ -133,8 +135,8 @@ class Player(Entity):
             'jump_l': make_anim_list('player\\jump', True),
             'shoot_r': make_anim_list('player\\shoot'),
             'shoot_l': make_anim_list('player\\shoot', True),
-            'dash_r': load_image('player\\misc\\dash.png'),
-            'dash_l': load_image('player\\misc\\dash_l.png'),
+            'punch_r': make_anim_list('player\\punch'),
+            'punch_l': make_anim_list('player\\punch', True)
         }
 
     def damage(self, value):
@@ -194,7 +196,7 @@ class Player(Entity):
             self.dashing = False
 
     def update_anim(self, name=''):
-        if self.last_anim == 'shoot_r' or self.last_anim == 'shoot_l':
+        if self.last_anim.startswith('shoot'):
             if name == 'shoot_r' or self.last_anim == 'shoot_r':
                 self.cur_frame += 0.2
                 if self.cur_frame >= len(self.frames['shoot_r']):
@@ -260,10 +262,19 @@ class Player(Entity):
                     if self.cur_frame >= len(self.frames['jump_l']):
                         self.cur_frame = len(self.frames['jump_l']) - 1
                     self.image = self.frames['jump_l'][int(self.cur_frame)].copy()
-            else:
-                self.cur_frame = 0
 
-            if name == 'idle_r':
+            if name.startswith('punch') or self.last_anim.startswith('punch'):
+                if name == 'punch_r' or self.last_anim == 'punch_r':
+                    self.last_anim = 'punch_r'
+                    self.cur_frame += 0.15
+                    self.cur_frame %= len(self.frames['punch_r'])
+                    self.image = self.frames['punch_r'][int(self.cur_frame)].copy()
+                elif name == 'punch_l' or self.last_anim == 'punch_l':
+                    self.last_anim = 'punch_l'
+                    self.cur_frame += 0.15
+                    self.cur_frame %= len(self.frames['punch_l'])
+                    self.image = self.frames['punch_l'][int(self.cur_frame)].copy()
+            elif name == 'idle_r':
                 self.last_anim = 'idle_r'
                 self.image = self.frames['idle_r'].copy()
             elif name == 'idle_l':

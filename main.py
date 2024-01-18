@@ -2,7 +2,7 @@ from UI_class import UI
 from init import *
 from menu_class import DeathScreen, Menu, Pause
 from music_class import Music
-from player_class import Bullet, Enemy, Player
+from player_class import Enemy, Player
 from scripts import generate_tiles, show_fps, time_convert
 from small_logic_classes import Level
 
@@ -43,6 +43,19 @@ def start_game(level_name):
                         player.last_anim = 'shoot_l'
                         player.update_anim('shoot_l')
                     shoot_timer = pygame.time.get_ticks()
+                if event.button == 1 and not player.dashing:
+                    player.cur_frame = 0
+                    player.step_frame = 1
+                    if player.last_keys == 1:
+                        player.last_anim = 'punch_r'
+                        player.update_anim('punch_r')
+                    elif player.last_keys == -1:
+                        player.last_anim = 'punch_l'
+                        player.update_anim('punch_l')
+            if event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 1 and player.last_anim.startswith('punch'):
+                    player.last_anim = ''
+
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     music.pause()
