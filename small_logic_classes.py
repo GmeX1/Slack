@@ -40,6 +40,28 @@ class Level:
         else:
             self.enemies_pos = None
 
+        self.switch_trigger = list(filter(lambda x: x[0] == (255, 115, 0, 255), rects))
+        if self.switch_trigger:
+            self.switch_trigger = rects.pop(rects.index(self.switch_trigger[0]))[1]
+            self.switch_trigger = pygame.Rect(
+                self.switch_trigger[0], self.switch_trigger[1],
+                self.switch_trigger[2] - self.switch_trigger[0],
+                self.switch_trigger[3] - self.switch_trigger[1]
+            )
+        else:
+            self.switch_trigger = None
+
+        self.end_trigger = list(filter(lambda x: x[0] == (255, 115, 255, 255), rects))
+        if self.end_trigger:
+            self.end_trigger = rects.pop(rects.index(self.end_trigger[0]))[1]
+            self.end_trigger = pygame.Rect(
+                self.end_trigger[0], self.end_trigger[1],
+                self.end_trigger[2] - self.end_trigger[0],
+                self.end_trigger[3] - self.end_trigger[1]
+            )
+        else:
+            self.end_trigger = None
+
         [Tile(i[0], *i[1], self.tiles, camera) for i in rects]
 
     def get_enemies_pos(self):
@@ -50,6 +72,12 @@ class Level:
 
     def get_player_spawn(self):
         return self.player_spawn_pos
+
+    def get_exit_rect(self):
+        return self.switch_trigger
+
+    def get_end_rect(self):
+        return self.end_trigger
 
 
 class Camera(pygame.sprite.Group):

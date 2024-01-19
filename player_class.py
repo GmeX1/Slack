@@ -1,7 +1,7 @@
 import pygame
 from numpy import random
 
-from init import all_sprites, bullet_icon, camera, enemies, player_group, sounds, steps_1
+from init import all_sprites, bullet_icon, camera, enemies, player_group, sounds, steps_1, stats
 from particles import BloodParticle, DashFX
 from scripts import load_image, make_anim_list
 
@@ -20,7 +20,7 @@ class Entity(pygame.sprite.Sprite):
         self.map_rect = pygame.Rect(pos, (placeholder, self.rect.height))
         self.mask = pygame.mask.from_surface(self.image)
 
-        self.hp = 5
+        self.hp = placeholder
         self.base_speed = placeholder
         self.speed = self.base_speed
         self.jump_power = placeholder
@@ -80,8 +80,9 @@ class Entity(pygame.sprite.Sprite):
 
 
 class Player(Entity):
-    def __init__(self, pos, walk=False):
+    def __init__(self, pos=(0, 0), walk=False):
         super().__init__(load_image('player\\idle\\idle_r.png'), pos, all_sprites, player_group, camera)
+        self.hp = stats['hp']
         self.animation_speed = 0.15 if walk else 0.15 * 2
         self.walk_mode = walk
         self.last_keys = 1
@@ -96,7 +97,6 @@ class Player(Entity):
         self.last_shift_time = 0
         self.dashing = False
         self.raging = False
-        self.dead = 0
 
         self.step_frame = 2
         self.dash_effect = DashFX(camera)
@@ -107,11 +107,30 @@ class Player(Entity):
         self.jump_power = self.base_jump_power
         self.import_anims()
 
+    # def reinit(self, pos, walk):
+    #     self.add(all_sprites, player_group, camera)
+    #     self.__init__(pos, walk)
+    #     self.map_rect.topleft = pos
+    #     self.rect.topleft = pos
+    #     # self.map_rect.x = self.rect.x = pos[0]
+    #     # self.map_rect.y = self.rect.y = pos[1]
+    #     self.animation_speed = 0.15 if walk else 0.15 * 2
+    #     self.walk_mode = walk
+    #
+    #     self.hp = stats['hp']
+    #     self.kills = 0
+    #     self.combo = 0
+    #
+    #     self.base_speed = 8 if not self.walk_mode else 2
+    #     self.speed = self.base_speed
+    #     self.base_jump_power = -6 if not self.walk_mode else -3
+    #     self.jump_power = self.base_jump_power
+
     def boost(self):  # TODO: Сделать уменьшение кулдаунов
         if self.combo > 1 and self.raging:
             mult = self.combo if self.combo < 6 else 7
             self.speed = self.base_speed + self.base_speed * mult * 0.1 + 3
-            self.jump_power = self.base_jump_power + self.base_jump_power * mult * 0.1 + 3
+            self.jump_power = self.base_jump_power + self.base_jump_power * mult * 0.1 - 3
             self.inv_time = 1500
         elif self.combo > 1:
             mult = self.combo if self.combo < 6 else 7
@@ -137,21 +156,8 @@ class Player(Entity):
             'shoot_r': make_anim_list('player\\shoot'),
             'shoot_l': make_anim_list('player\\shoot', True),
             'punch_r': make_anim_list('player\\punch'),
-            'punch_l': make_anim_list('player\\punch', True),
-            'death_r': make_anim_list('player\\death'),
-            'death_l': make_anim_list('player\\death', True)
+            'punch_l': make_anim_list('player\\punch', True)
         }
-
-    def death(self):
-        if self.dead == 0:
-            self.cur_frame = 0
-            self.dead = 1
-        self.speed = 0
-        self.jump_power = 0
-        if self.last_keys == -1:
-            self.update_anim('death_r')
-        elif self.last_keys == 1:
-            self.update_anim('death_l')
 
     def damage(self, value):
         if self.inv_time <= 0:
@@ -179,10 +185,16 @@ class Player(Entity):
             self.direction.x = 1
             self.last_keys = 1
         else:
-            if self.last_keys == -1:
-                self.update_anim('idle_l')
-            elif self.last_keys == 1:
-                self.update_anim('idle_r')
+            if not self.last_anim.startswith('jump'):
+                if self.last_keys == -1:
+                    self.update_anim('idle_l')
+                elif self.last_keys == 1:
+                    self.update_anim('idle_r')
+            else:
+                if self.last_keys == -1:
+                    self.update_anim('jump_l')
+                elif self.last_keys == 1:
+                    self.update_anim('jump_r')
             self.direction.x = 0
 
         if keys[pygame.K_UP] or keys[pygame.K_w] or keys[pygame.K_SPACE]:
@@ -202,6 +214,7 @@ class Player(Entity):
                 self.direction.x = -1
                 self.update_anim('dash_l')
             self.speed += 100
+            self.inv_time = 300
             self.dashing = True
             self.dash_effect.set_start(self.image.copy(), (self.map_rect.x, self.map_rect.y + 10))
             self.last_shift_time = pygame.time.get_ticks()
@@ -210,24 +223,7 @@ class Player(Entity):
             self.dashing = False
 
     def update_anim(self, name=''):
-        if name == 'death_r' or self.last_anim == 'death_r':
-            if self.dead == 1:
-                self.last_anim = 'death_r'
-                self.cur_frame += 0.08
-                if self.cur_frame >= len(self.frames['death_r']):
-                    self.dead = 2
-                    self.cur_frame = len(self.frames['death_r']) - 1
-                self.image = self.frames['death_r'][int(self.cur_frame)].copy()
-        elif name == 'death_l' or self.last_anim == 'death_l':
-            if self.dead == 1:
-                self.last_anim = 'death_l'
-                self.cur_frame += 0.08
-                if self.cur_frame >= len(self.frames['death_l']):
-                    self.dead = 2
-                    self.cur_frame = len(self.frames['death_l']) - 1
-                self.image = self.frames['death_l'][int(self.cur_frame)].copy()
-
-        elif self.last_anim.startswith('shoot'):
+        if self.last_anim.startswith('shoot'):
             if name == 'shoot_r' or self.last_anim == 'shoot_r':
                 self.cur_frame += 0.2
                 if self.cur_frame >= len(self.frames['shoot_r']):
@@ -248,6 +244,30 @@ class Player(Entity):
                 Bullet((self.map_rect.centerx, self.map_rect.centery - 20), self.last_keys,
                        'player')
                 self.step_frame = 2
+
+        elif name.startswith('punch') or self.last_anim.startswith('punch'):
+            if name == 'punch_l' or self.last_keys == -1:
+                self.last_anim = 'punch_l'
+            elif name == 'punch_r' or self.last_keys == 1:
+                self.last_anim = 'punch_r'
+
+            if self.last_anim == 'punch_r':
+                self.last_anim = 'punch_r'
+                self.cur_frame += 0.15
+                self.cur_frame %= len(self.frames['punch_r'])
+                self.image = self.frames['punch_r'][int(self.cur_frame)].copy()
+            elif self.last_anim == 'punch_l':
+                self.last_anim = 'punch_l'
+                self.cur_frame += 0.15
+                self.cur_frame %= len(self.frames['punch_l'])
+                self.image = self.frames['punch_l'][int(self.cur_frame)].copy()
+
+            if int(self.cur_frame) == self.step_frame == 1:
+                self.step_frame = 4
+                self.attack()
+            elif int(self.cur_frame) == self.step_frame == 4:
+                self.step_frame = 1
+                self.attack()
         else:
             if (name == 'left' or name == 'right') and not self.last_anim.startswith('jump'):
                 if name == 'right':
@@ -277,42 +297,20 @@ class Player(Entity):
                     self.step_frame = 7
 
             elif name.startswith('jump') or self.last_anim.startswith('jump'):
-                # TODO: Свернул условие, чтобы позже исправить баг.
-                #  Сам баг: если прыгнуть вправо и пойти влево (или наоборот), персонаж не поворачивается
                 if name == 'jump_r' or self.last_anim == 'jump_r':
                     self.last_anim = 'jump_r'
                     self.jump()
-                    self.cur_frame += 0.06
+                    self.cur_frame += 0.05
                     if self.cur_frame >= len(self.frames['jump_r']):
                         self.cur_frame = len(self.frames['jump_r']) - 1
                     self.image = self.frames['jump_r'][int(self.cur_frame)].copy()
                 elif name == 'jump_l' or self.last_anim == 'jump_l':
                     self.last_anim = 'jump_l'
                     self.jump()
-                    self.cur_frame += self.animation_speed
+                    self.cur_frame += 0.05
                     if self.cur_frame >= len(self.frames['jump_l']):
                         self.cur_frame = len(self.frames['jump_l']) - 1
                     self.image = self.frames['jump_l'][int(self.cur_frame)].copy()
-
-            if name.startswith('punch') or self.last_anim.startswith('punch'):
-                if name == 'punch_r' or self.last_anim == 'punch_r':
-                    self.last_anim = 'punch_r'
-                    self.cur_frame += 0.15
-                    self.cur_frame %= len(self.frames['punch_r'])
-                    self.image = self.frames['punch_r'][int(self.cur_frame)].copy()
-                elif name == 'punch_l' or self.last_anim == 'punch_l':
-                    self.last_anim = 'punch_l'
-                    self.cur_frame += 0.15
-                    self.cur_frame %= len(self.frames['punch_l'])
-                    self.image = self.frames['punch_l'][int(self.cur_frame)].copy()
-
-                if int(self.cur_frame) == self.step_frame == 1:
-                    self.step_frame = 4
-                    self.attack()
-                elif int(self.cur_frame) == self.step_frame == 4:
-                    self.step_frame = 1
-                    self.attack()
-
             elif name == 'idle_r':
                 self.last_anim = 'idle_r'
                 self.image = self.frames['idle_r'].copy()
@@ -327,18 +325,14 @@ class Player(Entity):
                 self.last_anim = 'dash_l'
                 self.image = self.frames['dash_l'].copy()
 
-        if self.last_anim.startswith('shoot'):
-            if self.last_anim.endswith('r'):
-                self.rect = self.image.get_rect(bottomleft=self.map_rect.bottomleft)
-            else:
-                self.rect = self.image.get_rect(bottomright=self.map_rect.bottomright)
+        if name.startswith('jump') or self.last_anim.startswith('jump'):
+            self.rect = self.image.get_rect(midbottom=self.map_rect.midbottom)
+        elif name.endswith('l') or name == 'left':
+            self.rect = self.image.get_rect(bottomright=self.map_rect.bottomright)
+        elif name.endswith('r') or name == 'right':
+            self.rect = self.image.get_rect(bottomleft=self.map_rect.bottomleft)
         else:
-            if name.endswith('l') or self.last_anim.endswith('l'):
-                self.rect = self.image.get_rect(bottomright=self.map_rect.bottomright)
-            elif name.endswith('r') or self.last_anim.endswith('r'):
-                self.rect = self.image.get_rect(bottomleft=self.map_rect.bottomleft)
-            else:
-                self.rect = self.image.get_rect(midbottom=self.map_rect.midbottom)
+            self.rect = self.image.get_rect(midbottom=self.map_rect.midbottom)
 
     def attack(self):
         rect = None
@@ -378,12 +372,10 @@ class Player(Entity):
         if self.dashing and self.dash_effect.end_pos is None:
             self.dash_effect.set_end((self.map_rect.x, self.map_rect.y + 10))
 
-        if self.dead == 0:
-            self.get_keys()
-        if self.last_anim.startswith('jump'):
-            if self.collisions['bottom']:
-                self.last_anim = ''
-                self.cur_frame = 0
+        if self.last_anim.startswith('jump') and self.collisions['bottom']:
+            self.last_anim = ''
+            self.cur_frame = 0
+        self.get_keys()
         if self.inv_time > 0:
             self.inv_time -= pygame.time.get_ticks() - self.start_tick
             if self.inv_time <= 0:
@@ -410,6 +402,7 @@ class Bullet(Entity):
                 if pygame.sprite.spritecollide(self, entities, False, collided=pygame.sprite.collide_mask):
                     entities.sprite.damage(1)
                     if entities.sprite.hp <= 0:
+                        entities.sprite.kill()
                         self.kill()
                         return True
                     self.kill()

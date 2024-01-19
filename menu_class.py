@@ -3,7 +3,7 @@ from sys import exit as sys_exit
 import pygame
 from numpy.random import randint
 
-from init import set_effects_volume, sounds, screen,db
+from init import db, save_stats, screen, set_effects_volume, sounds
 from particles import SparkParticle
 from scripts import show_fps
 
@@ -64,13 +64,26 @@ class Menu:
                     False if i != len(self.buttons) - 1 else True
                 )
 
+    def show_loading(self):
+        self.surface.fill((0, 0, 0))
+        render = self.font_big.render('ЗАГРУЗКА...', True, (255, 255, 255))
+        self.surface.blit(
+            render,
+            (self.surface.get_width() / 2 - render.get_width() / 2,
+             self.surface.get_height() / 2 - render.get_height() / 2)
+        )
+
     def handle_click(self, button):
-        if button.text in ['НАЧАТЬ ИГРУ', 'ПРОДОЛЖИТЬ']:  # Пока не подключу БД, любая из кнопок просто откроет игру
+        if button.text == 'ПРОДОЛЖИТЬ':
             self.show = False
             return 'close'
+        elif button.text == 'НАЧАТЬ ИГРУ':
+            self.show = False
+            return 'erase'
         elif button.text == 'НАСТРОЙКИ':
             self.generate_settings()
         elif button.text == 'ВЫЙТИ':
+            save_stats()
             self.db.commit()
             pygame.quit()
             sys_exit()
@@ -123,15 +136,13 @@ class Menu:
             for button in self.buttons:
                 button.update()
                 if mouse_click_pos != (-1, -1) and button.click(mouse_click_pos):
-                    if self.handle_click(button) == 'close':
-                        self.surface.fill((0, 0, 0))
-                        render = self.font_big.render('ЗАГРУЗКА...', True, (255, 255, 255))
-                        self.surface.blit(
-                            render,
-                            (self.surface.get_width() / 2 - render.get_width() / 2,
-                             self.surface.get_height() / 2 - render.get_height() / 2)
-                        )
-                        break
+                    handle = self.handle_click(button)
+                    if handle == 'close':
+                        self.show_loading()
+                        return 'close'
+                    elif handle == 'erase':
+                        self.show_loading()
+                        return 'erase'
                 if button.hover:
                     for layer, layer_offset in button.get_layers():
                         pos = [*button.get_relative_pos()]
@@ -313,6 +324,101 @@ class DeathScreen(Menu):
         if button.text == 'ВОЗРОДИТЬСЯ':
             self.show = False
         elif button.text == 'Я СДАЮСЬ':
+            self.db.commit()
+            self.call_menu = True
+
+
+class EndScreen(Menu):
+    def __init__(self):
+        self.last_frame = screen.copy()
+        self.call_menu = False
+        self.fade_time = 3000
+        self.start_tick = pygame.time.get_ticks()
+
+        self.kills = 0
+        self.max_combo = 0
+        self.live_time = '00:00:00'
+
+        super().__init__()
+
+    def set_last_frame(self):
+        self.last_frame = screen.copy()
+        self.fade_time = 3000
+        self.start_tick = pygame.time.get_ticks()
+
+    def generate_menu(self):
+        self.buttons = ['Спасибо за игру!', 'Общая статистика:', f'Врагов убито: {self.kills}',
+                        f'Времени потрачено: {self.live_time}', f'Максимальное комбо: {self.max_combo}', 'В МЕНЮ']
+        self.buttons[0] = Button(
+            self.font_big,
+            self.buttons[0],
+            (self.surface.get_width() / 2, self.surface.get_height() / 8),
+            False
+        )
+        for i in range(1, len(self.buttons)):
+            if i < 5:
+                self.buttons[i] = Button(
+                    self.font_small,
+                    self.buttons[i],
+                    (self.surface.get_width() / 2, self.surface.get_height() / 12 * (i + 3)),
+                    False
+                )
+            else:
+                self.buttons[i] = Button(
+                    self.font_medium,
+                    self.buttons[i],
+                    (self.surface.get_width() / 2, self.surface.get_height() / 8 * (i + 1.5))
+                )
+
+    def set_stats(self, kills, max_combo, time):
+        self.kills = kills
+        self.max_combo = max_combo
+        self.live_time = time
+        self.generate_menu()
+
+    def start(self):
+        self.fps_switch = self.cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()[0][0]
+        self.call_menu = False
+        self.show = True
+        self.generate_menu()
+        clock = pygame.time.Clock()
+        while self.show:
+            mouse_click_pos = (-1, -1)
+            for event in pygame.event.get():
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    mouse_click_pos = event.pos
+
+            if self.fade_time > 0:
+                self.fade_time -= pygame.time.get_ticks() - self.start_tick
+                if self.fade_time <= 0:
+                    self.last_frame.set_alpha(0)
+                else:
+                    self.last_frame.set_alpha(self.fade_time / (3000 / 255))
+
+            self.surface.fill((0, 0, 0))
+            self.surface.blit(self.last_frame, (0, 0))
+
+            for button in self.buttons:
+                button.update()
+                if mouse_click_pos != (-1, -1) and button.click(mouse_click_pos):
+                    self.handle_click(button)
+                    if self.call_menu:
+                        self.show = False
+                        return True
+                if button.hover:
+                    for layer, layer_offset in button.get_layers():
+                        pos = [*button.get_relative_pos()]
+                        pos[0] += layer_offset
+                        self.surface.blit(layer, pos)
+                self.surface.blit(button.render, button.get_relative_pos())
+                if self.fps_switch:
+                    show_fps(self.surface, clock)
+            pygame.display.flip()
+            clock.tick(100)
+        return False
+
+    def handle_click(self, button):
+        if button.text == 'В МЕНЮ':
             self.db.commit()
             self.call_menu = True
 
