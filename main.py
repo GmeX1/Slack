@@ -1,6 +1,6 @@
 from UI_class import UI
 from init import *
-from menu_class import DeathScreen, Menu, Pause
+from menu_class import DeathScreen, Menu, Pause, EndScreen
 from music_class import Music
 from player_class import Enemy, Player
 from scripts import generate_tiles, show_fps, time_convert
@@ -19,6 +19,10 @@ def start_game(level_name):
 
     if level.get_enemies_pos():
         [Enemy(i, player) for i in level.get_enemies_pos()]
+
+    end_screen = None
+    if level.get_end_rect():
+        end_screen = EndScreen()
 
     cur = db.cursor()
     fps_switch = cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()[0][0]
@@ -132,7 +136,16 @@ def start_game(level_name):
                     stats['kills'] += player.kills
                     stats['live_time'] += pygame.time.get_ticks() - spawn_time
                     save_stats()
-                    return 'end'
+
+                    end_screen.set_last_frame()
+                    end_screen.set_stats(stats['kills'], stats['max_combo'], time_convert(stats['live_time']))
+                    menu_open = end_screen.start()
+                    music.pause()
+                    pygame.mixer.fadeout(150)
+                    if menu_open:
+                        return 'menu'
+                    else:
+                        return 'restart'
                 else:
                     ui.draw_warn(len(enemies))
         ui.draw()
@@ -179,7 +192,6 @@ if __name__ == '__main__':
             stats['level'] += 1
 
         if answer == 'end':
-            print('конец!')
             menu.start()
         else:
             answer = start_game(str(stats['level']))
