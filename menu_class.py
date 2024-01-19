@@ -64,6 +64,15 @@ class Menu:
                     False if i != len(self.buttons) - 1 else True
                 )
 
+    def show_loading(self):
+        self.surface.fill((0, 0, 0))
+        render = self.font_big.render('ЗАГРУЗКА...', True, (255, 255, 255))
+        self.surface.blit(
+            render,
+            (self.surface.get_width() / 2 - render.get_width() / 2,
+             self.surface.get_height() / 2 - render.get_height() / 2)
+        )
+
     def handle_click(self, button):
         if button.text in ['НАЧАТЬ ИГРУ', 'ПРОДОЛЖИТЬ']:  # Пока не подключу БД, любая из кнопок просто откроет игру
             self.show = False
@@ -124,13 +133,7 @@ class Menu:
                 button.update()
                 if mouse_click_pos != (-1, -1) and button.click(mouse_click_pos):
                     if self.handle_click(button) == 'close':
-                        self.surface.fill((0, 0, 0))
-                        render = self.font_big.render('ЗАГРУЗКА...', True, (255, 255, 255))
-                        self.surface.blit(
-                            render,
-                            (self.surface.get_width() / 2 - render.get_width() / 2,
-                             self.surface.get_height() / 2 - render.get_height() / 2)
-                        )
+                        self.show_loading()
                         break
                 if button.hover:
                     for layer, layer_offset in button.get_layers():

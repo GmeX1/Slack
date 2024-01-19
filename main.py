@@ -14,12 +14,12 @@ def start_game(level_name):
     camera.empty()
 
     level = Level(level_name, camera, screen)
-    music = Music(level_name)
     player = Player(level.get_player_spawn(),
                     False)  # TODO: Переделать, тесты (level.get_story_mode())
     camera.get_map_image(level.image)
 
-    [Enemy(i, player) for i in level.get_enemies_pos()]
+    if level.get_enemies_pos():
+        [Enemy(i, player) for i in level.get_enemies_pos()]
 
     cur = db.cursor()
     fps_switch = cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()[0][0]
@@ -108,6 +108,12 @@ def start_game(level_name):
             player.raging = True
         else:
             player.raging = False
+        if level.switch_trigger:
+            if level.get_exit_rect().colliderect(player.rect):
+                if len(enemies) == 0:
+                    menu.show_loading()
+                    return 'next'
+                print('не все мертвы')
         ui.draw()
 
         music.check_combo(player.combo)
@@ -121,16 +127,25 @@ def start_game(level_name):
 
 
 if __name__ == '__main__':
+    stats = {
+        'level': 1
+    }
     ui = UI()
     menu = Menu()
     pause = Pause()
     death_screen = DeathScreen()
     menu.start()
     generate_tiles()
+    music = Music()
     answer = start_game('1')
     while answer:
         if answer == 'menu':
             menu.start()
-        ui = UI()
-        death_screen = DeathScreen()
-        answer = start_game('1')  # Пока что игра просто перезапускается, ибо нет контрольных точек
+            music = Music()
+        if answer == 'restart':
+            ui = UI()
+            death_screen = DeathScreen()
+            music = Music()
+        if answer == 'next':
+            stats['level'] += 1
+        answer = start_game(str(stats['level']))
