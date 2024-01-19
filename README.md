@@ -85,8 +85,7 @@ pyinstaller --onefile --noconsole main.py
 - [The Darkish Feeling](https://vk.com/artist/gmex)
 
 ### Звуки:
-- [Звуковые эффекты 1](https://zvukogram.com/)
-- [Звуковые эффекты 2](https://www.zapsplat.com)
+- [Звуки шагов](https://dryoma.itch.io/footsteps-sounds)
 
 ### Изображения:
 - [ШАБЛОН](https://i.ytimg.com/vi/iXCm79oFmnE/maxresdefault.jpg)
