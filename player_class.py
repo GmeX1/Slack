@@ -96,6 +96,7 @@ class Player(Entity):
         self.last_shift_time = 0
         self.dashing = False
         self.raging = False
+        self.dead = 0
 
         self.step_frame = 2
         self.dash_effect = DashFX(camera)
@@ -136,8 +137,21 @@ class Player(Entity):
             'shoot_r': make_anim_list('player\\shoot'),
             'shoot_l': make_anim_list('player\\shoot', True),
             'punch_r': make_anim_list('player\\punch'),
-            'punch_l': make_anim_list('player\\punch', True)
+            'punch_l': make_anim_list('player\\punch', True),
+            'death_r': make_anim_list('player\\death'),
+            'death_l': make_anim_list('player\\death', True)
         }
+
+    def death(self):
+        if self.dead == 0:
+            self.cur_frame = 0
+            self.dead = 1
+        self.speed = 0
+        self.jump_power = 0
+        if self.last_keys == -1:
+            self.update_anim('death_r')
+        elif self.last_keys == 1:
+            self.update_anim('death_l')
 
     def damage(self, value):
         if self.inv_time <= 0:
@@ -196,7 +210,24 @@ class Player(Entity):
             self.dashing = False
 
     def update_anim(self, name=''):
-        if self.last_anim.startswith('shoot'):
+        if name == 'death_r' or self.last_anim == 'death_r':
+            if self.dead == 1:
+                self.last_anim = 'death_r'
+                self.cur_frame += 0.08
+                if self.cur_frame >= len(self.frames['death_r']):
+                    self.dead = 2
+                    self.cur_frame = len(self.frames['death_r']) - 1
+                self.image = self.frames['death_r'][int(self.cur_frame)].copy()
+        elif name == 'death_l' or self.last_anim == 'death_l':
+            if self.dead == 1:
+                self.last_anim = 'death_l'
+                self.cur_frame += 0.08
+                if self.cur_frame >= len(self.frames['death_l']):
+                    self.dead = 2
+                    self.cur_frame = len(self.frames['death_l']) - 1
+                self.image = self.frames['death_l'][int(self.cur_frame)].copy()
+
+        elif self.last_anim.startswith('shoot'):
             if name == 'shoot_r' or self.last_anim == 'shoot_r':
                 self.cur_frame += 0.2
                 if self.cur_frame >= len(self.frames['shoot_r']):
@@ -302,9 +333,9 @@ class Player(Entity):
             else:
                 self.rect = self.image.get_rect(bottomright=self.map_rect.bottomright)
         else:
-            if name.endswith('l'):
+            if name.endswith('l') or self.last_anim.endswith('l'):
                 self.rect = self.image.get_rect(bottomright=self.map_rect.bottomright)
-            elif name.endswith('r'):
+            elif name.endswith('r') or self.last_anim.endswith('r'):
                 self.rect = self.image.get_rect(bottomleft=self.map_rect.bottomleft)
             else:
                 self.rect = self.image.get_rect(midbottom=self.map_rect.midbottom)
@@ -347,7 +378,8 @@ class Player(Entity):
         if self.dashing and self.dash_effect.end_pos is None:
             self.dash_effect.set_end((self.map_rect.x, self.map_rect.y + 10))
 
-        self.get_keys()
+        if self.dead == 0:
+            self.get_keys()
         if self.last_anim.startswith('jump'):
             if self.collisions['bottom']:
                 self.last_anim = ''
@@ -378,7 +410,6 @@ class Bullet(Entity):
                 if pygame.sprite.spritecollide(self, entities, False, collided=pygame.sprite.collide_mask):
                     entities.sprite.damage(1)
                     if entities.sprite.hp <= 0:
-                        entities.sprite.kill()
                         self.kill()
                         return True
                     self.kill()

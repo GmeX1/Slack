@@ -33,7 +33,7 @@ def start_game(level_name):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
-            if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.type == pygame.MOUSEBUTTONDOWN and player.dead == 0:
                 if event.button == 3 and pygame.time.get_ticks() - shoot_timer > 500 and player.collisions['bottom']:
                     player.cur_frame = 0
                     player.step_frame = 1
@@ -86,16 +86,18 @@ def start_game(level_name):
         if player.hp < ui.hp_amount:
             ui.remove_hp()
         if player.hp <= 0:
-            death_screen.set_last_frame()
-            death_screen.set_stats(player.kills, time_convert(pygame.time.get_ticks()))
-            music.pause()
-            pygame.mixer.fadeout(150)
-            menu_open = death_screen.start()
-            pygame.mixer.fadeout(150)
-            if menu_open:
-                return 'menu'
-            else:
-                return 'restart'
+            player.death()
+            if player.dead == 2:
+                death_screen.set_last_frame()
+                death_screen.set_stats(player.kills, time_convert(pygame.time.get_ticks()))
+                music.pause()
+                pygame.mixer.fadeout(150)
+                menu_open = death_screen.start()
+                pygame.mixer.fadeout(150)
+                if menu_open:
+                    return 'menu'
+                else:
+                    return 'restart'
         if player.kills > ui.kills:
             ui.kill(50)  # TODO: Сделать коэффициент
         if ui.combo_timer:
