@@ -118,7 +118,7 @@ def start_game(level_name):
                     ui.draw_warn(len(enemies))
         elif level.get_end_rect():
             if level.get_end_rect().colliderect(player.rect):
-                if len(enemies) == 0:  # TODO: Сделать показатель неубитых врагов
+                if len(enemies) == 0:
                     menu.show_loading()
                     return 'next'
                 else:
@@ -146,7 +146,7 @@ if __name__ == '__main__':
 
     player = Player()
     music = Music()
-    answer = start_game('1')
+    answer = start_game(str(stats['level']))
     while answer:
         if answer == 'menu':
             menu.start()
