@@ -105,7 +105,11 @@ class Menu:
         pygame.mixer.music.set_volume(volume)
 
     def start_music(self):
-        volume = self.cur.execute('SELECT value FROM settings WHERE name="music_volume"').fetchone()[0] / 100
+        volume = self.cur.execute('SELECT value FROM settings WHERE name="music_volume"').fetchone()
+        if not volume:
+            volume = 0.5
+        else:
+            volume = volume[0] / 100
         pygame.mixer.music.load('data\\music\\menu.wav')
         pygame.mixer.music.set_volume(volume)
         pygame.mixer.music.play(-1)
