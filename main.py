@@ -14,8 +14,8 @@ def start_game(level_name):
     camera.empty()
 
     level = Level(level_name, camera, screen)
-    player = Player(level.get_player_spawn(),
-                    False)  # TODO: Переделать, тесты (level.get_story_mode())
+    player.reinit(level.get_player_spawn(),
+                  False)  # TODO: Переделать, тесты (level.get_story_mode())
     camera.get_map_image(level.image)
 
     if level.get_enemies_pos():
@@ -127,15 +127,15 @@ def start_game(level_name):
 
 
 if __name__ == '__main__':
-    stats = {
-        'level': 1
-    }
     ui = UI()
     menu = Menu()
     pause = Pause()
     death_screen = DeathScreen()
+
     menu.start()
     generate_tiles()
+
+    player = Player()
     music = Music()
     answer = start_game('1')
     while answer:
@@ -148,4 +148,8 @@ if __name__ == '__main__':
             music = Music()
         if answer == 'next':
             stats['level'] += 1
-        answer = start_game(str(stats['level']))
+        if stats['level'] > 2:
+            print('конец!')
+            menu.start()
+        else:
+            answer = start_game(str(stats['level']))

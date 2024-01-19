@@ -54,5 +54,8 @@ sounds = {
     'rage_on': pygame.mixer.Sound('data\\sounds\\rage_activate.wav')
 }
 steps_1 = steps_init('steps_floor')
-
 set_effects_volume()
+
+stats = {
+    'level': 1
+}

@@ -80,7 +80,7 @@ class Entity(pygame.sprite.Sprite):
 
 
 class Player(Entity):
-    def __init__(self, pos, walk=False):
+    def __init__(self, pos=(0, 0), walk=False):
         super().__init__(load_image('player\\idle\\idle_r.png'), pos, all_sprites, player_group, camera)
         self.animation_speed = 0.15 if walk else 0.15 * 2
         self.walk_mode = walk
@@ -105,6 +105,20 @@ class Player(Entity):
         self.base_jump_power = -6 if not self.walk_mode else -3
         self.jump_power = self.base_jump_power
         self.import_anims()
+
+    def reinit(self, pos, walk):
+        self.add(all_sprites, player_group, camera)
+        self.map_rect.topleft = pos
+        self.rect.topleft = pos
+        # self.map_rect.x = self.rect.x = pos[0]
+        # self.map_rect.y = self.rect.y = pos[1]
+        self.animation_speed = 0.15 if walk else 0.15 * 2
+        self.walk_mode = walk
+
+        self.base_speed = 8 if not self.walk_mode else 2
+        self.speed = self.base_speed
+        self.base_jump_power = -6 if not self.walk_mode else -3
+        self.jump_power = self.base_jump_power
 
     def boost(self):  # TODO: Сделать уменьшение кулдаунов
         if self.combo > 1 and self.raging:
@@ -165,10 +179,16 @@ class Player(Entity):
             self.direction.x = 1
             self.last_keys = 1
         else:
-            if self.last_keys == -1:
-                self.update_anim('idle_l')
-            elif self.last_keys == 1:
-                self.update_anim('idle_r')
+            if not self.last_anim.startswith('jump'):
+                if self.last_keys == -1:
+                    self.update_anim('idle_l')
+                elif self.last_keys == 1:
+                    self.update_anim('idle_r')
+            else:
+                if self.last_keys == -1:
+                    self.update_anim('jump_l')
+                elif self.last_keys == 1:
+                    self.update_anim('jump_r')
             self.direction.x = 0
 
         if keys[pygame.K_UP] or keys[pygame.K_w] or keys[pygame.K_SPACE]:
@@ -217,6 +237,24 @@ class Player(Entity):
                 Bullet((self.map_rect.centerx, self.map_rect.centery - 20), self.last_keys,
                        'player')
                 self.step_frame = 2
+        elif name.startswith('punch') or self.last_anim.startswith('punch'):
+            if name == 'punch_r' or self.last_anim == 'punch_r':
+                self.last_anim = 'punch_r'
+                self.cur_frame += 0.15
+                self.cur_frame %= len(self.frames['punch_r'])
+                self.image = self.frames['punch_r'][int(self.cur_frame)].copy()
+            elif name == 'punch_l' or self.last_anim == 'punch_l':
+                self.last_anim = 'punch_l'
+                self.cur_frame += 0.15
+                self.cur_frame %= len(self.frames['punch_l'])
+                self.image = self.frames['punch_l'][int(self.cur_frame)].copy()
+
+            if int(self.cur_frame) == self.step_frame == 1:
+                self.step_frame = 4
+                self.attack()
+            elif int(self.cur_frame) == self.step_frame == 4:
+                self.step_frame = 1
+                self.attack()
         else:
             if (name == 'left' or name == 'right') and not self.last_anim.startswith('jump'):
                 if name == 'right':
@@ -246,42 +284,20 @@ class Player(Entity):
                     self.step_frame = 7
 
             elif name.startswith('jump') or self.last_anim.startswith('jump'):
-                # TODO: Свернул условие, чтобы позже исправить баг.
-                #  Сам баг: если прыгнуть вправо и пойти влево (или наоборот), персонаж не поворачивается
                 if name == 'jump_r' or self.last_anim == 'jump_r':
                     self.last_anim = 'jump_r'
                     self.jump()
-                    self.cur_frame += 0.06
+                    self.cur_frame += 0.05
                     if self.cur_frame >= len(self.frames['jump_r']):
                         self.cur_frame = len(self.frames['jump_r']) - 1
                     self.image = self.frames['jump_r'][int(self.cur_frame)].copy()
                 elif name == 'jump_l' or self.last_anim == 'jump_l':
                     self.last_anim = 'jump_l'
                     self.jump()
-                    self.cur_frame += self.animation_speed
+                    self.cur_frame += 0.05
                     if self.cur_frame >= len(self.frames['jump_l']):
                         self.cur_frame = len(self.frames['jump_l']) - 1
                     self.image = self.frames['jump_l'][int(self.cur_frame)].copy()
-
-            if name.startswith('punch') or self.last_anim.startswith('punch'):
-                if name == 'punch_r' or self.last_anim == 'punch_r':
-                    self.last_anim = 'punch_r'
-                    self.cur_frame += 0.15
-                    self.cur_frame %= len(self.frames['punch_r'])
-                    self.image = self.frames['punch_r'][int(self.cur_frame)].copy()
-                elif name == 'punch_l' or self.last_anim == 'punch_l':
-                    self.last_anim = 'punch_l'
-                    self.cur_frame += 0.15
-                    self.cur_frame %= len(self.frames['punch_l'])
-                    self.image = self.frames['punch_l'][int(self.cur_frame)].copy()
-
-                if int(self.cur_frame) == self.step_frame == 1:
-                    self.step_frame = 4
-                    self.attack()
-                elif int(self.cur_frame) == self.step_frame == 4:
-                    self.step_frame = 1
-                    self.attack()
-
             elif name == 'idle_r':
                 self.last_anim = 'idle_r'
                 self.image = self.frames['idle_r'].copy()
@@ -296,18 +312,14 @@ class Player(Entity):
                 self.last_anim = 'dash_l'
                 self.image = self.frames['dash_l'].copy()
 
-        if self.last_anim.startswith('shoot'):
-            if self.last_anim.endswith('r'):
-                self.rect = self.image.get_rect(bottomleft=self.map_rect.bottomleft)
-            else:
-                self.rect = self.image.get_rect(bottomright=self.map_rect.bottomright)
+        if name.startswith('jump') or self.last_anim.startswith('jump'):
+            self.rect = self.image.get_rect(midbottom=self.map_rect.midbottom)
+        elif name.endswith('l') or name == 'left':
+            self.rect = self.image.get_rect(bottomright=self.map_rect.bottomright)
+        elif name.endswith('r') or name == 'right':
+            self.rect = self.image.get_rect(bottomleft=self.map_rect.bottomleft)
         else:
-            if name.endswith('l'):
-                self.rect = self.image.get_rect(bottomright=self.map_rect.bottomright)
-            elif name.endswith('r'):
-                self.rect = self.image.get_rect(bottomleft=self.map_rect.bottomleft)
-            else:
-                self.rect = self.image.get_rect(midbottom=self.map_rect.midbottom)
+            self.rect = self.image.get_rect(midbottom=self.map_rect.midbottom)
 
     def attack(self):
         rect = None
@@ -328,6 +340,7 @@ class Player(Entity):
 
     def update(self, **kwargs):
         if not self.dashing:
+            self.inv_time = 250
             if self.combo or self.raging:
                 self.boost()
             else:
@@ -347,17 +360,16 @@ class Player(Entity):
         if self.dashing and self.dash_effect.end_pos is None:
             self.dash_effect.set_end((self.map_rect.x, self.map_rect.y + 10))
 
-        self.get_keys()
-        if self.last_anim.startswith('jump'):
-            if self.collisions['bottom']:
-                self.last_anim = ''
-                self.cur_frame = 0
+        if self.last_anim.startswith('jump') and self.collisions['bottom']:
+            self.last_anim = ''
+            self.cur_frame = 0
         if self.inv_time > 0:
             self.inv_time -= pygame.time.get_ticks() - self.start_tick
             if self.inv_time <= 0:
                 self.image.set_alpha(255)
             else:
                 self.image.set_alpha(100 + (1500 - self.inv_time) / (1500 / 125))
+        self.get_keys()
         self.start_tick = pygame.time.get_ticks()
 
 
