@@ -87,8 +87,7 @@ pyinstaller --onefile --noconsole main.py
 ### Звуки:
 - [Звуки шагов](https://dryoma.itch.io/footsteps-sounds)
 
-### Изображения:
-- [ШАБЛОН](https://i.ytimg.com/vi/iXCm79oFmnE/maxresdefault.jpg)
+Все ресурсы, за исключением звуков шагов, были сделаны самостоятельно :)
 
 ## Авторы проекта
 
