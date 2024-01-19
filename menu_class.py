@@ -155,7 +155,7 @@ class Menu:
             clock.tick(100)
 
 
-class Pause(Menu):  # TODO: накладывается один фпс на другой
+class Pause(Menu):
     def __init__(self):
         super().__init__()
         self.last_frame = self.surface.copy()
