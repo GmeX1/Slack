@@ -14,7 +14,7 @@ def start_game(level_name):
     camera.empty()
 
     level = Level(level_name, camera, screen)
-    player.reinit(level.get_player_spawn(), level.get_story_mode())
+    player.__init__(level.get_player_spawn(), level.get_story_mode())
     camera.get_map_image(level.image)
 
     if level.get_enemies_pos():
@@ -23,11 +23,12 @@ def start_game(level_name):
     cur = db.cursor()
     fps_switch = cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()[0][0]
 
-    ui.set_hp(player.hp)
+    ui.set_hp(stats['hp'])
 
     run = True
     clock = pygame.time.Clock()
     shoot_timer = pygame.time.get_ticks()
+    spawn_time = pygame.time.get_ticks()
     while run:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -87,7 +88,7 @@ def start_game(level_name):
             ui.remove_hp()
         if player.hp <= 0:
             death_screen.set_last_frame()
-            death_screen.set_stats(player.kills, time_convert(pygame.time.get_ticks()))
+            death_screen.set_stats(player.kills, time_convert(pygame.time.get_ticks() - spawn_time))
             music.pause()
             pygame.mixer.fadeout(150)
             menu_open = death_screen.start()
@@ -113,14 +114,25 @@ def start_game(level_name):
             if level.get_exit_rect().colliderect(player.rect):
                 if len(enemies) == 0:
                     menu.show_loading()
+                    stats['hp'] = player.hp
+                    stats['rage'] = ui.rage_value
+                    stats['max_combo'] = max(death_screen.max_combo, stats['max_combo'])
+                    stats['kills'] += player.kills
+                    stats['live_time'] += pygame.time.get_ticks() - spawn_time
+                    save_stats()
                     return 'next'
                 else:
                     ui.draw_warn(len(enemies))
         elif level.get_end_rect():
             if level.get_end_rect().colliderect(player.rect):
                 if len(enemies) == 0:
-                    menu.show_loading()
-                    return 'next'
+                    stats['hp'] = player.hp
+                    stats['rage'] = ui.rage_value
+                    stats['max_combo'] = max(death_screen.max_combo, stats['max_combo'])
+                    stats['kills'] += player.kills
+                    stats['live_time'] += pygame.time.get_ticks() - spawn_time
+                    save_stats()
+                    return 'end'
                 else:
                     ui.draw_warn(len(enemies))
         ui.draw()
@@ -141,24 +153,34 @@ if __name__ == '__main__':
     pause = Pause()
     death_screen = DeathScreen()
 
-    menu.start()
+    menu_answer = menu.start()
+    if menu_answer == 'erase':
+        reset_stats()
     generate_tiles()
 
     player = Player()
     music = Music()
     answer = start_game(str(stats['level']))
-    while answer:
+    while answer:  # TODO: синхронизировать значения с БД
         if answer == 'menu':
-            menu.start()
-            music = Music()
+            menu_answer = menu.start()
+            if menu_answer == 'erase':
+                reset_stats()
+            music.__init__()
+            ui.__init__()
+            ui.rage_value = stats['rage']
+
         if answer == 'restart':
-            ui = UI()
-            death_screen = DeathScreen()
-            music = Music()
+            ui.__init__()
+            death_screen.__init__()
+            music.__init__()
+
         if answer == 'next':
             stats['level'] += 1
-        if stats['level'] > 2:
+
+        if answer == 'end':
             print('конец!')
             menu.start()
         else:
             answer = start_game(str(stats['level']))
+db.close()

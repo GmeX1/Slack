@@ -3,7 +3,7 @@ from sys import exit as sys_exit
 import pygame
 from numpy.random import randint
 
-from init import set_effects_volume, sounds, screen,db
+from init import db, save_stats, screen, set_effects_volume, sounds
 from particles import SparkParticle
 from scripts import show_fps
 
@@ -74,12 +74,16 @@ class Menu:
         )
 
     def handle_click(self, button):
-        if button.text in ['НАЧАТЬ ИГРУ', 'ПРОДОЛЖИТЬ']:  # Пока не подключу БД, любая из кнопок просто откроет игру
+        if button.text == 'ПРОДОЛЖИТЬ':
             self.show = False
             return 'close'
+        elif button.text == 'НАЧАТЬ ИГРУ':
+            self.show = False
+            return 'erase'
         elif button.text == 'НАСТРОЙКИ':
             self.generate_settings()
         elif button.text == 'ВЫЙТИ':
+            save_stats()
             self.db.commit()
             pygame.quit()
             sys_exit()
@@ -132,9 +136,13 @@ class Menu:
             for button in self.buttons:
                 button.update()
                 if mouse_click_pos != (-1, -1) and button.click(mouse_click_pos):
-                    if self.handle_click(button) == 'close':
+                    handle = self.handle_click(button)
+                    if handle == 'close':
                         self.show_loading()
-                        break
+                        return 'close'
+                    elif handle == 'erase':
+                        self.show_loading()
+                        return 'erase'
                 if button.hover:
                     for layer, layer_offset in button.get_layers():
                         pos = [*button.get_relative_pos()]

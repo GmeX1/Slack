@@ -1,6 +1,6 @@
 import pygame
 
-from init import screen, sounds
+from init import screen, sounds, stats
 from scripts import load_image, make_anim_list
 
 

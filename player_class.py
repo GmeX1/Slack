@@ -1,7 +1,7 @@
 import pygame
 from numpy import random
 
-from init import all_sprites, bullet_icon, camera, enemies, player_group, sounds, steps_1
+from init import all_sprites, bullet_icon, camera, enemies, player_group, sounds, steps_1, stats
 from particles import BloodParticle, DashFX
 from scripts import load_image, make_anim_list
 
@@ -20,7 +20,7 @@ class Entity(pygame.sprite.Sprite):
         self.map_rect = pygame.Rect(pos, (placeholder, self.rect.height))
         self.mask = pygame.mask.from_surface(self.image)
 
-        self.hp = 5
+        self.hp = placeholder
         self.base_speed = placeholder
         self.speed = self.base_speed
         self.jump_power = placeholder
@@ -82,6 +82,7 @@ class Entity(pygame.sprite.Sprite):
 class Player(Entity):
     def __init__(self, pos=(0, 0), walk=False):
         super().__init__(load_image('player\\idle\\idle_r.png'), pos, all_sprites, player_group, camera)
+        self.hp = stats['hp']
         self.animation_speed = 0.15 if walk else 0.15 * 2
         self.walk_mode = walk
         self.last_keys = 1
@@ -106,25 +107,30 @@ class Player(Entity):
         self.jump_power = self.base_jump_power
         self.import_anims()
 
-    def reinit(self, pos, walk):
-        self.add(all_sprites, player_group, camera)
-        self.map_rect.topleft = pos
-        self.rect.topleft = pos
-        # self.map_rect.x = self.rect.x = pos[0]
-        # self.map_rect.y = self.rect.y = pos[1]
-        self.animation_speed = 0.15 if walk else 0.15 * 2
-        self.walk_mode = walk
-
-        self.base_speed = 8 if not self.walk_mode else 2
-        self.speed = self.base_speed
-        self.base_jump_power = -6 if not self.walk_mode else -3
-        self.jump_power = self.base_jump_power
+    # def reinit(self, pos, walk):
+    #     self.add(all_sprites, player_group, camera)
+    #     self.__init__(pos, walk)
+    #     self.map_rect.topleft = pos
+    #     self.rect.topleft = pos
+    #     # self.map_rect.x = self.rect.x = pos[0]
+    #     # self.map_rect.y = self.rect.y = pos[1]
+    #     self.animation_speed = 0.15 if walk else 0.15 * 2
+    #     self.walk_mode = walk
+    #
+    #     self.hp = stats['hp']
+    #     self.kills = 0
+    #     self.combo = 0
+    #
+    #     self.base_speed = 8 if not self.walk_mode else 2
+    #     self.speed = self.base_speed
+    #     self.base_jump_power = -6 if not self.walk_mode else -3
+    #     self.jump_power = self.base_jump_power
 
     def boost(self):  # TODO: Сделать уменьшение кулдаунов
         if self.combo > 1 and self.raging:
             mult = self.combo if self.combo < 6 else 7
             self.speed = self.base_speed + self.base_speed * mult * 0.1 + 3
-            self.jump_power = self.base_jump_power + self.base_jump_power * mult * 0.1 + 3
+            self.jump_power = self.base_jump_power + self.base_jump_power * mult * 0.1 - 3
             self.inv_time = 1500
         elif self.combo > 1:
             mult = self.combo if self.combo < 6 else 7
@@ -208,6 +214,7 @@ class Player(Entity):
                 self.direction.x = -1
                 self.update_anim('dash_l')
             self.speed += 100
+            self.inv_time = 300
             self.dashing = True
             self.dash_effect.set_start(self.image.copy(), (self.map_rect.x, self.map_rect.y + 10))
             self.last_shift_time = pygame.time.get_ticks()
@@ -346,7 +353,6 @@ class Player(Entity):
 
     def update(self, **kwargs):
         if not self.dashing:
-            self.inv_time = 250
             if self.combo or self.raging:
                 self.boost()
             else:
@@ -369,13 +375,13 @@ class Player(Entity):
         if self.last_anim.startswith('jump') and self.collisions['bottom']:
             self.last_anim = ''
             self.cur_frame = 0
+        self.get_keys()
         if self.inv_time > 0:
             self.inv_time -= pygame.time.get_ticks() - self.start_tick
             if self.inv_time <= 0:
                 self.image.set_alpha(255)
             else:
                 self.image.set_alpha(100 + (1500 - self.inv_time) / (1500 / 125))
-        self.get_keys()
         self.start_tick = pygame.time.get_ticks()
 
 
