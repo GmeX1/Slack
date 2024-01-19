@@ -414,7 +414,7 @@ class Bullet(Entity):
             self.kill()
 
 
-class Enemy(Entity):
+class Enemy1(Entity):
     def __init__(self, pos, player):
         super().__init__(pygame.Surface((10, 51)), pos, all_sprites, enemies, camera)
         self.image.fill((0, 0, 255))
@@ -496,10 +496,10 @@ class Enemy(Entity):
             self.check_vertical_collisions(kwargs['tiles'])
 
 
-class Enemy1(Entity):
+class Enemy2(Entity):
     def __init__(self, pos, player):
         super().__init__(pygame.Surface((10, 51)), pos, all_sprites, enemies, camera)
-        self.image.fill((46, 10, 255))
+        self.image.fill((200, 0, 255))
         self.mask = pygame.mask.from_surface(self.image)
         self.map_rect = self.rect.copy()
         self.standing_time = 0
@@ -511,6 +511,7 @@ class Enemy1(Entity):
         self.time_to_change_direction = random.uniform(1, 4)
         self.player = player
         self.last_direction_x = 1
+
     def attack(self):
         rect = None
         if self.last_direction_x == 1:
@@ -522,7 +523,6 @@ class Enemy1(Entity):
             player = player_group.sprite
             if rect.colliderect(player.rect):
                 player.damage(1)
-
 
     def choose_direction(self):
         self.direction.x = random.choice([-1, 1])
@@ -557,7 +557,6 @@ class Enemy1(Entity):
         if abs(self.player.map_rect.x - self.map_rect.x) <= 10 and abs(self.player.map_rect.y - self.map_rect.y) < 50:
             self.speed = 0
             self.attack()
-
 
     def update(self, **kwargs):
         self.check_last_direction()

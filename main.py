@@ -1,8 +1,8 @@
 from UI_class import UI
 from init import *
-from menu_class import DeathScreen, Menu, Pause, EndScreen
+from menu_class import DeathScreen, EndScreen, Menu, Pause
 from music_class import Music
-from player_class import Enemy, Player, Enemy1
+from player_class import Enemy1, Enemy2, Player
 from scripts import generate_tiles, show_fps, time_convert
 from small_logic_classes import Level
 
@@ -17,8 +17,10 @@ def start_game(level_name):
     player.__init__(level.get_player_spawn(), level.get_story_mode())
     camera.get_map_image(level.image)
 
-    if level.get_enemies_pos():
-        [Enemy1(i, player) for i in level.get_enemies_pos()]
+    if level.get_enemies_1_pos():
+        [Enemy1(i, player) for i in level.get_enemies_1_pos()]
+    if level.get_enemies_2_pos():
+        [Enemy2(i, player) for i in level.get_enemies_2_pos()]
 
     end_screen = None
     if level.get_end_rect():

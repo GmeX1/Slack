@@ -34,11 +34,17 @@ class Level:
         else:
             self.story_mode = False
 
-        self.enemies_pos = list(filter(lambda x: x[0] == (255, 0, 0, 255), rects))
-        if self.enemies_pos:
-            self.enemies_pos = list(map(lambda x: rects.pop(rects.index(x))[1][:2], self.enemies_pos))
+        self.enemies_1_pos = list(filter(lambda x: x[0] == (255, 0, 0, 255), rects))
+        if self.enemies_1_pos:
+            self.enemies_1_pos = list(map(lambda x: rects.pop(rects.index(x))[1][:2], self.enemies_1_pos))
         else:
-            self.enemies_pos = None
+            self.enemies_1_pos = None
+
+        self.enemies_2_pos = list(filter(lambda x: x[0] == (225, 0, 0, 255), rects))
+        if self.enemies_2_pos:
+            self.enemies_2_pos = list(map(lambda x: rects.pop(rects.index(x))[1][:2], self.enemies_2_pos))
+        else:
+            self.enemies_2_pos = None
 
         self.switch_trigger = list(filter(lambda x: x[0] == (255, 115, 0, 255), rects))
         if self.switch_trigger:
@@ -64,8 +70,11 @@ class Level:
 
         [Tile(i[0], *i[1], self.tiles, camera) for i in rects]
 
-    def get_enemies_pos(self):
-        return self.enemies_pos
+    def get_enemies_1_pos(self):
+        return self.enemies_1_pos
+
+    def get_enemies_2_pos(self):
+        return self.enemies_2_pos
 
     def get_story_mode(self):
         return self.story_mode
@@ -113,11 +122,12 @@ class Camera(pygame.sprite.Group):
             if self.resize_coef > 2:
                 self.resize_coef = 2
             self.borders = {
-                'left': self.surface.get_width() * self.resize_coef / 4,
-                'right': self.surface.get_width() * self.resize_coef / 4 * 3,
-                'top': self.surface.get_height() * self.resize_coef / 4,
+                'left': self.surface.get_width() / 4,
+                'right': self.surface.get_width() / self.resize_coef / 4 * 3,
+                'top': self.surface.get_height() / 4,
                 'bottom': self.surface.get_height() * self.resize_coef / 4 * 3
             }
+
             self.pos_rect = pygame.Rect(
                 self.borders['left'],
                 self.borders['top'],
@@ -149,6 +159,8 @@ class Camera(pygame.sprite.Group):
             self.offset.x = 0
         if self.offset.y < 0:
             self.offset.y = 0
+
+        self.pre_surface.fill((0, 0, 0))
 
         if self.map_image:
             pos = self.map_rect.topleft - self.offset
