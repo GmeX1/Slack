@@ -1,7 +1,7 @@
 import pygame
 
-from init import sounds, screen
-from scripts import make_anim_list, load_image
+from init import screen, sounds
+from scripts import load_image, make_anim_list
 
 
 class UI:
@@ -18,6 +18,7 @@ class UI:
         }
         self.hp_amount = 0
 
+        self.warn_font = pygame.font.Font('data\\fonts\\better-vcr.ttf', 72)
         self.combo_font = pygame.font.Font('data\\fonts\\facon.otf', 90)
         self.combo_font_shadow = pygame.font.Font('data\\fonts\\facon.otf', 100)
         self.combo_shadow_shift = pygame.math.Vector2()
@@ -27,12 +28,19 @@ class UI:
         self.blink_combo = 0
         self.kills = 0
 
+        self.remaining = 0
+        self.blink_warn = 0
+
         self.rage_value = 0
         self.blink_rage = 0
         self.deplete = False
         self.rage_channel = None
         self.overlay = pygame.transform.smoothscale(load_image('overlay\\vignette.png'), screen.get_size())
         self.overlay_opacity = 0
+
+    def draw_warn(self, enemies):
+        self.blink_warn = 255
+        self.remaining = str(enemies)
 
     def kill(self, rage):
         self.kills += 1
@@ -161,6 +169,19 @@ class UI:
 
         if self.blink_combo > 0:
             self.blink_combo -= 5
+
+        # ПРЕДУПРЕЖДЕНИЕ
+        if self.blink_warn:
+            r_channel = 200 + self.blink_warn
+            if r_channel > 255:
+                r_channel = 255
+            text = self.warn_font.render(f'УБЕЙ ОСТАВШИХСЯ {self.remaining}', False,
+                                         (r_channel, self.blink_warn, self.blink_warn))
+            self.surface.blit(
+                text, (self.screen.get_width() / 2 - text.get_width() / 2, self.screen.get_height() / 6)
+            )
+        if self.blink_warn > 0:
+            self.blink_warn -= 5
 
         # ВЫВОД НА ЭКРАН
         self.screen.blit(self.surface, (0, 0))

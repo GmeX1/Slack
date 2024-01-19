@@ -14,8 +14,7 @@ def start_game(level_name):
     camera.empty()
 
     level = Level(level_name, camera, screen)
-    player.reinit(level.get_player_spawn(),
-                  False)  # TODO: Переделать, тесты (level.get_story_mode())
+    player.reinit(level.get_player_spawn(), level.get_story_mode())
     camera.get_map_image(level.image)
 
     if level.get_enemies_pos():
@@ -56,6 +55,7 @@ def start_game(level_name):
             if event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1 and player.last_anim.startswith('punch'):
                     player.last_anim = ''
+                    player.step_frame = 2
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
@@ -108,12 +108,21 @@ def start_game(level_name):
             player.raging = True
         else:
             player.raging = False
-        if level.switch_trigger:
+
+        if level.get_exit_rect():
             if level.get_exit_rect().colliderect(player.rect):
                 if len(enemies) == 0:
                     menu.show_loading()
                     return 'next'
-                print('не все мертвы')
+                else:
+                    ui.draw_warn(len(enemies))
+        elif level.get_end_rect():
+            if level.get_end_rect().colliderect(player.rect):
+                if len(enemies) == 0:  # TODO: Сделать показатель неубитых врагов
+                    menu.show_loading()
+                    return 'next'
+                else:
+                    ui.draw_warn(len(enemies))
         ui.draw()
 
         music.check_combo(player.combo)

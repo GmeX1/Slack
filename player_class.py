@@ -237,13 +237,19 @@ class Player(Entity):
                 Bullet((self.map_rect.centerx, self.map_rect.centery - 20), self.last_keys,
                        'player')
                 self.step_frame = 2
+
         elif name.startswith('punch') or self.last_anim.startswith('punch'):
-            if name == 'punch_r' or self.last_anim == 'punch_r':
+            if name == 'punch_l' or self.last_keys == -1:
+                self.last_anim = 'punch_l'
+            elif name == 'punch_r' or self.last_keys == 1:
+                self.last_anim = 'punch_r'
+
+            if self.last_anim == 'punch_r':
                 self.last_anim = 'punch_r'
                 self.cur_frame += 0.15
                 self.cur_frame %= len(self.frames['punch_r'])
                 self.image = self.frames['punch_r'][int(self.cur_frame)].copy()
-            elif name == 'punch_l' or self.last_anim == 'punch_l':
+            elif self.last_anim == 'punch_l':
                 self.last_anim = 'punch_l'
                 self.cur_frame += 0.15
                 self.cur_frame %= len(self.frames['punch_l'])
