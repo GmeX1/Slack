@@ -80,8 +80,8 @@ pygame.mixer.set_num_channels(18)
 
 pygame.display.set_caption('Slack')
 info = pygame.display.Info()
-# screen = pygame.display.set_mode((info.current_w, info.current_h), pygame.FULLSCREEN)
-screen = pygame.display.set_mode((info.current_w - 100, info.current_h - 100))  # На время тестов лучше оконный режим
+screen = pygame.display.set_mode((info.current_w, info.current_h), pygame.FULLSCREEN)
+# screen = pygame.display.set_mode((info.current_w - 100, info.current_h - 100))  # На время тестов лучше оконный режим
 bullet_icon = load_image('bullet\\bullet.png')
 
 camera = Camera(screen)
@@ -97,7 +97,7 @@ else:
 sounds = {
     'click': pygame.mixer.Sound('data\\sounds\\click.wav'),
     'hover': pygame.mixer.Sound('data\\sounds\\hover.wav'),
-    'shoot': pygame.mixer.Sound('data\\sounds\\shoot.wav'),  # Пока что звук один, ибо оружий как таковых нет
+    'shoot': pygame.mixer.Sound('data\\sounds\\shoot.wav'),
     'death_screen': pygame.mixer.Sound('data\\sounds\\death_screen.wav'),
     'rage_on': pygame.mixer.Sound('data\\sounds\\rage_activate.wav')
 }

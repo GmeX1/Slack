@@ -117,7 +117,6 @@ class DashFX:
         self.image = image
         self.image.set_alpha(255)
         self.start_pos = pos
-        # self.images.append(DashFX.BaseSprite(image, pos, self.camera))
 
     def set_end(self, pos):
         self.end_pos = pos

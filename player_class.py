@@ -397,8 +397,6 @@ class Bullet(Entity):
 
     def update(self, **kwargs):
         self.map_rect.x += self.base_speed * self.direction.x
-        # Поскольку у пули анимаций нет, то просто переписываем координаты с прямоугольника карты на прямоугольник
-        # изображения. С врагом пока что аналогично, потому что там тоже нет анимаций (пока что)
         self.rect.x = self.map_rect.x
         if self.check_for == 'enemy':
             answer = self.kill_entity(kwargs['enemies'])
@@ -408,7 +406,6 @@ class Bullet(Entity):
             self.kill_entity(kwargs['player'])
 
         self.check_horizontal_collisions(kwargs['tiles'])
-        # Я думаю, что возможен вариант диагональных пуль. Потом посмотрим, как пойдёт, но было бы неплохо такое сделать
         self.check_vertical_collisions(kwargs['tiles'])
         if self.collisions['right'] or self.collisions['left']:
             self.kill()
