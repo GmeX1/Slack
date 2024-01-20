@@ -105,7 +105,11 @@ class Menu:
         pygame.mixer.music.set_volume(volume)
 
     def start_music(self):
-        volume = self.cur.execute('SELECT value FROM settings WHERE name="music_volume"').fetchone()[0] / 100
+        volume = self.cur.execute('SELECT value FROM settings WHERE name="music_volume"').fetchone()
+        if not volume:
+            volume = 0.5
+        else:
+            volume = volume[0] / 100
         pygame.mixer.music.load('data\\music\\menu.wav')
         pygame.mixer.music.set_volume(volume)
         pygame.mixer.music.play(-1)
@@ -155,7 +159,7 @@ class Menu:
             clock.tick(100)
 
 
-class Pause(Menu):  # TODO: накладывается один фпс на другой
+class Pause(Menu):
     def __init__(self):
         super().__init__()
         self.last_frame = self.surface.copy()

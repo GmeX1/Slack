@@ -5,7 +5,11 @@ from init import db
 
 class Music:
     def __init__(self):
-        self.volume = db.cursor().execute('SELECT value FROM settings WHERE name="music_volume"').fetchone()[0] / 100
+        self.volume = db.cursor().execute('SELECT value FROM settings WHERE name="music_volume"').fetchone()
+        if not self.volume:
+            self.volume = 0.5
+        else:
+            self.volume = self.volume[0] / 100
         pygame.mixer.music.load(f'data\\music\\main_layer.wav')
         pygame.mixer.music.set_volume(self.volume)
         self.layer_1 = {

@@ -1,8 +1,8 @@
 from UI_class import UI
 from init import *
-from menu_class import DeathScreen, Menu, Pause, EndScreen
+from menu_class import DeathScreen, EndScreen, Menu, Pause
 from music_class import Music
-from player_class import Enemy, Player
+from player_class import Enemy1, Enemy2, Player
 from scripts import generate_tiles, show_fps, time_convert
 from small_logic_classes import Level
 
@@ -17,8 +17,10 @@ def start_game(level_name):
     player.__init__(level.get_player_spawn(), level.get_story_mode())
     camera.get_map_image(level.image)
 
-    if level.get_enemies_pos():
-        [Enemy(i, player) for i in level.get_enemies_pos()]
+    if level.get_enemies_1_pos():
+        [Enemy1(i, player) for i in level.get_enemies_1_pos()]
+    if level.get_enemies_2_pos():
+        [Enemy2(i, player) for i in level.get_enemies_2_pos()]
 
     end_screen = None
     if level.get_end_rect():
@@ -77,12 +79,6 @@ def start_game(level_name):
                     music.resume()
                 if event.key == pygame.K_q:
                     ui.activate_rage()
-                if event.key == pygame.K_h:  # TODO: Убрать. Для тестов.
-                    if player.hp > 0:
-                        player.hp -= 1
-                        ui.remove_hp()
-                if event.key == pygame.K_j:
-                    ui.kill(100)
         all_sprites.update(tiles=level.tiles, enemies=enemies, player=player_group)
         screen.fill((0, 0, 0))
         camera.draw_offset(player)
@@ -102,7 +98,7 @@ def start_game(level_name):
             else:
                 return 'restart'
         if player.kills > ui.kills:
-            ui.kill(50)  # TODO: Сделать коэффициент
+            ui.kill(10)
         if ui.combo_timer:
             if player.combo != ui.combo:
                 player.combo = ui.combo
@@ -174,7 +170,7 @@ if __name__ == '__main__':
     player = Player()
     music = Music()
     answer = start_game(str(stats['level']))
-    while answer:  # TODO: синхронизировать значения с БД
+    while answer:
         if answer == 'menu':
             menu_answer = menu.start()
             if menu_answer == 'erase':

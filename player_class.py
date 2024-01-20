@@ -34,7 +34,7 @@ class Entity(pygame.sprite.Sprite):
         }
 
     def jump(self):
-        if self.collisions['bottom']:  # TODO: Расскомментить, тесты.
+        if self.collisions['bottom']:
             self.direction.y = self.jump_power
 
     def check_horizontal_collisions(self, tiles):
@@ -107,26 +107,7 @@ class Player(Entity):
         self.jump_power = self.base_jump_power
         self.import_anims()
 
-    # def reinit(self, pos, walk):
-    #     self.add(all_sprites, player_group, camera)
-    #     self.__init__(pos, walk)
-    #     self.map_rect.topleft = pos
-    #     self.rect.topleft = pos
-    #     # self.map_rect.x = self.rect.x = pos[0]
-    #     # self.map_rect.y = self.rect.y = pos[1]
-    #     self.animation_speed = 0.15 if walk else 0.15 * 2
-    #     self.walk_mode = walk
-    #
-    #     self.hp = stats['hp']
-    #     self.kills = 0
-    #     self.combo = 0
-    #
-    #     self.base_speed = 8 if not self.walk_mode else 2
-    #     self.speed = self.base_speed
-    #     self.base_jump_power = -6 if not self.walk_mode else -3
-    #     self.jump_power = self.base_jump_power
-
-    def boost(self):  # TODO: Сделать уменьшение кулдаунов
+    def boost(self):
         if self.combo > 1 and self.raging:
             mult = self.combo if self.combo < 6 else 7
             self.speed = self.base_speed + self.base_speed * mult * 0.1 + 3
@@ -163,6 +144,7 @@ class Player(Entity):
         if self.inv_time <= 0:
             self.hp -= value
             self.inv_time = 1500  # Полторы секунды неуязвимости при получении урона
+            [BloodParticle(self.rect.center, all_sprites, camera) for _ in range(random.randint(5, 13))]
 
     def kill_enemy(self):
         self.kills += 1
@@ -349,7 +331,6 @@ class Player(Entity):
                     if enemy.hp <= 0:
                         enemy.kill()
                         self.kill_enemy()
-            # TODO: Парирование (сравниваться с пулями)
 
     def update(self, **kwargs):
         if not self.dashing:
@@ -390,8 +371,6 @@ class Bullet(Entity):
         super().__init__(bullet_icon, pos, all_sprites, camera)
         self.check_for = 'player' if initiator == 'enemy' else 'enemy'
         self.map_rect = self.rect.copy()
-        # TODO: Кажется, придётся либо пулю делать больше, либо делать трассировку попадания :) Если скорость пули
-        #  высокая, то она с большим шансом просто "перешагнёт" врага и коллизии формально не будет
         self.base_speed = 10
         self.direction.x = last
         pygame.mixer.find_channel().play(sounds['shoot'])
@@ -402,7 +381,6 @@ class Bullet(Entity):
                 if pygame.sprite.spritecollide(self, entities, False, collided=pygame.sprite.collide_mask):
                     entities.sprite.damage(1)
                     if entities.sprite.hp <= 0:
-                        entities.sprite.kill()
                         self.kill()
                         return True
                     self.kill()
@@ -436,7 +414,7 @@ class Bullet(Entity):
             self.kill()
 
 
-class Enemy(Entity):
+class Enemy1(Entity):
     def __init__(self, pos, player):
         super().__init__(pygame.Surface((10, 51)), pos, all_sprites, enemies, camera)
         self.image.fill((0, 0, 255))
@@ -467,7 +445,7 @@ class Enemy(Entity):
             self.check_player()
 
     def check_player(self):
-        if abs(self.player.map_rect.x - self.map_rect.x) < 300 and (self.player.map_rect.y + 50) >= self.map_rect.y:
+        if abs(self.player.map_rect.x - self.map_rect.x) < 300 and abs(self.player.map_rect.y - self.map_rect.y) < 50:
             if self.player.map_rect.x < self.map_rect.x:
                 self.direction.x = -1
                 self.standing_time = 0
@@ -485,10 +463,10 @@ class Enemy(Entity):
             self.last_direction_x = -1
 
     def enemy_attack(self):
-        if abs(self.player.map_rect.x - self.map_rect.x) < 50 and (self.player.map_rect.y + 50) >= self.map_rect.y \
+        if abs(self.player.map_rect.x - self.map_rect.x) < 200 and abs(self.player.map_rect.y - self.map_rect.y) < 50 \
                 and pygame.time.get_ticks() - self.shoot_timer > 600:
+            self.speed = 0
             Bullet(self.map_rect.center, self.last_direction_x, 'enemy')
-
             self.shoot_timer = pygame.time.get_ticks()
 
     def update(self, **kwargs):
@@ -506,6 +484,96 @@ class Enemy(Entity):
             self.check_vertical_collisions(kwargs['tiles'])
 
         else:
+            self.speed = 2
+            self.check_time_event()
+            self.map_rect.x += self.direction.x * self.speed
+            self.rect.x = self.map_rect.x
+            self.check_horizontal_collisions(kwargs['tiles'])
+
+            self.direction.y += 0.2
+            self.map_rect.y += self.direction.y
+            self.rect.y = self.map_rect.y
+            self.check_vertical_collisions(kwargs['tiles'])
+
+
+class Enemy2(Entity):
+    def __init__(self, pos, player):
+        super().__init__(pygame.Surface((10, 51)), pos, all_sprites, enemies, camera)
+        self.image.fill((200, 0, 255))
+        self.mask = pygame.mask.from_surface(self.image)
+        self.map_rect = self.rect.copy()
+        self.standing_time = 0
+        self.choose_direction()
+        self.hp = 2
+        self.base_speed = 2
+        self.speed = self.base_speed
+        self.choose_direction()
+        self.time_to_change_direction = random.uniform(1, 4)
+        self.player = player
+        self.last_direction_x = 1
+
+    def attack(self):
+        rect = None
+        if self.last_direction_x == 1:
+            rect = pygame.Rect(self.rect.topleft, (self.rect.width + 10, self.rect.height))
+        elif self.last_direction_x == -1:
+            rect = pygame.Rect((self.rect.x - 10, self.rect.y), (self.rect.width + 10, self.rect.height))
+
+        if rect is not None:
+            player = player_group.sprite
+            if rect.colliderect(player.rect):
+                player.damage(1)
+
+    def choose_direction(self):
+        self.direction.x = random.choice([-1, 1])
+
+    def check_time_event(self):
+        self.standing_time += 1 / 100
+        if self.standing_time >= self.time_to_change_direction:
+            self.choose_direction()
+            self.standing_time = 1
+            self.time_to_change_direction = random.uniform(1, 4)
+            self.check_player()
+
+    def check_player(self):
+        if abs(self.player.map_rect.x - self.map_rect.x) < 300 and abs(self.player.map_rect.y - self.map_rect.y) < 50:
+            if self.player.map_rect.x < self.map_rect.x:
+                self.direction.x = -1
+                self.standing_time = 0
+                return True
+
+            elif self.player.map_rect.x > self.map_rect.x:
+                self.direction.x = 1
+                self.standing_time = 0
+                return True
+
+    def check_last_direction(self):
+        if self.direction.x == 1:
+            self.last_direction_x = 1
+        elif self.direction.x == -1:
+            self.last_direction_x = -1
+
+    def enemy_attack(self):
+        if abs(self.player.map_rect.x - self.map_rect.x) <= 10 and abs(self.player.map_rect.y - self.map_rect.y) < 50:
+            self.speed = 0
+            self.attack()
+
+    def update(self, **kwargs):
+        self.check_last_direction()
+        self.enemy_attack()
+
+        if self.check_player():
+            self.map_rect.x += self.direction.x * self.speed
+            self.rect.x = self.map_rect.x
+            self.check_horizontal_collisions(kwargs['tiles'])
+
+            self.direction.y += 0.2
+            self.map_rect.y += self.direction.y
+            self.rect.y = self.map_rect.y
+            self.check_vertical_collisions(kwargs['tiles'])
+
+        else:
+            self.speed = 2
             self.check_time_event()
             self.map_rect.x += self.direction.x * self.speed
             self.rect.x = self.map_rect.x

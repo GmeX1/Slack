@@ -8,7 +8,12 @@ from small_logic_classes import Camera
 
 
 def set_effects_volume():
-    volume = db.cursor().execute('SELECT value FROM settings WHERE name="effect_volume"').fetchone()[0] / 100
+    volume = db.cursor().execute('SELECT value FROM settings WHERE name="effect_volume"').fetchone()
+    if not volume:
+        volume = 0.5
+    else:
+        volume = volume[0] / 100
+
     for key in sounds.keys():
         sounds[key].set_volume(volume)
 
