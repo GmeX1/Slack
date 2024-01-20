@@ -6,8 +6,8 @@ Slack - сюжетный платформер с упором на динами�
 
 (Место под скриншоты)
 
-![скриншот1](D:\Python_Projects\PyGame_Main\git\data\misc\screenshot1.png "скриншот1")
-![скриншот2](D:\Python_Projects\PyGame_Main\git\data\misc\screenshot2.png "скриншот1")
+![скриншот1](data/misc/screenshot1.png "скриншот1")
+![скриншот2](data/misc/screenshot1.png "скриншот1")
 
 
 
