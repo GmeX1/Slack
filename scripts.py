@@ -7,7 +7,7 @@ from PIL import Image, ImageDraw
 from numpy.random import randint
 
 
-def show_fps(screen, clock):  # TODO: Чтобы обойти все баги, нужно сразу передавать fps в main
+def show_fps(screen, clock):
     font = pygame.font.Font('data\\fonts\\better-vcr.ttf', 48)
     screen.blit(font.render(str(round(clock.get_fps())), True, (255, 255, 255)), (5, 5))
 

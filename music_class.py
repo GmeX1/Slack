@@ -4,23 +4,27 @@ from init import db
 
 
 class Music:
-    def __init__(self, level):
-        self.volume = db.cursor().execute('SELECT value FROM settings WHERE name="music_volume"').fetchone()[0] / 100
-        pygame.mixer.music.load(f'data\\music\\{level}\\main_layer.wav')
+    def __init__(self):
+        self.volume = db.cursor().execute('SELECT value FROM settings WHERE name="music_volume"').fetchone()
+        if not self.volume:
+            self.volume = 0.5
+        else:
+            self.volume = self.volume[0] / 100
+        pygame.mixer.music.load(f'data\\music\\main_layer.wav')
         pygame.mixer.music.set_volume(self.volume)
         self.layer_1 = {
             'channel': pygame.mixer.Channel(0),
-            'sound': pygame.mixer.Sound(f'data\\music\\{level}\\layer_1.wav'),
+            'sound': pygame.mixer.Sound(f'data\\music\\layer_1.wav'),
             'volume': 0
         }
         self.layer_2 = {
             'channel': pygame.mixer.Channel(1),
-            'sound': pygame.mixer.Sound(f'data\\music\\{level}\\layer_2.wav'),
+            'sound': pygame.mixer.Sound(f'data\\music\\layer_2.wav'),
             'volume': 0
         }
         self.layer_3 = {
             'channel': pygame.mixer.Channel(2),
-            'sound': pygame.mixer.Sound(f'data\\music\\{level}\\layer_3.wav'),
+            'sound': pygame.mixer.Sound(f'data\\music\\layer_3.wav'),
             'volume': 0
         }
 

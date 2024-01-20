@@ -2,12 +2,18 @@ import os
 import sqlite3
 
 import pygame
+
 from scripts import database_create, load_image
 from small_logic_classes import Camera
 
 
 def set_effects_volume():
-    volume = db.cursor().execute('SELECT value FROM settings WHERE name="effect_volume"').fetchone()[0] / 100
+    volume = db.cursor().execute('SELECT value FROM settings WHERE name="effect_volume"').fetchone()
+    if not volume:
+        volume = 0.5
+    else:
+        volume = volume[0] / 100
+
     for key in sounds.keys():
         sounds[key].set_volume(volume)
 
@@ -16,6 +22,49 @@ def set_effects_volume():
         volume = 0.05
     for sound in steps_1:
         sound.set_volume(volume)
+
+
+def get_stats():
+    out = {
+        'level': db.cursor().execute('SELECT value FROM settings WHERE name="level"').fetchone(),
+        'hp': db.cursor().execute('SELECT value FROM settings WHERE name="hp"').fetchone(),
+        'rage': db.cursor().execute('SELECT value FROM settings WHERE name="rage"').fetchone(),
+        'max_combo': db.cursor().execute('SELECT value FROM settings WHERE name="max_combo"').fetchone(),
+        'live_time': db.cursor().execute('SELECT value FROM settings WHERE name="live_time"').fetchone(),
+        'kills': db.cursor().execute('SELECT value FROM settings WHERE name="kills"').fetchone(),
+    }
+    exists = True
+    for key in out.keys():
+        if out[key]:
+            out[key] = out[key][0]
+        else:
+            exists = False
+            if key == 'hp':
+                val = 5
+            else:
+                val = 0
+            out[key] = val
+            db.cursor().execute(f'INSERT INTO settings (name, value) VALUES("{key}",{val})')
+    if not exists:
+        db.commit()
+    return out
+
+
+def reset_stats():
+    for key in stats.keys():
+        if key == 'hp':
+            db.cursor().execute(f'UPDATE settings SET name="{key}", value=5 WHERE name="{key}"')
+            stats[key] = 5
+        else:
+            db.cursor().execute(f'UPDATE settings SET name="{key}", value=0 WHERE name="{key}"')
+            stats[key] = 0
+        db.commit()
+
+
+def save_stats():
+    for key in stats.keys():
+        db.cursor().execute(f'UPDATE settings SET name="{key}", value={stats[key]} WHERE name="{key}"')
+        db.commit()
 
 
 def steps_init(folder):
@@ -27,8 +76,7 @@ def steps_init(folder):
 
 pygame.mixer.pre_init(44100, -16, 2, 512)
 pygame.init()
-# TODO: Превышает лимит каналов
-pygame.mixer.set_num_channels(12)
+pygame.mixer.set_num_channels(18)
 
 pygame.display.set_caption('Slack')
 info = pygame.display.Info()
@@ -54,5 +102,6 @@ sounds = {
     'rage_on': pygame.mixer.Sound('data\\sounds\\rage_activate.wav')
 }
 steps_1 = steps_init('steps_floor')
-
 set_effects_volume()
+
+stats = get_stats()

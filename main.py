@@ -1,8 +1,8 @@
 from UI_class import UI
 from init import *
-from menu_class import DeathScreen, Menu, Pause
+from menu_class import DeathScreen, EndScreen, Menu, Pause
 from music_class import Music
-from player_class import Enemy, Player
+from player_class import Enemy1, Enemy2, Player
 from scripts import generate_tiles, show_fps, time_convert
 from small_logic_classes import Level
 
@@ -14,26 +14,32 @@ def start_game(level_name):
     camera.empty()
 
     level = Level(level_name, camera, screen)
-    music = Music(level_name)
-    player = Player(level.get_player_spawn(),
-                    False)  # TODO: Переделать, тесты (level.get_story_mode())
+    player.__init__(level.get_player_spawn(), level.get_story_mode())
     camera.get_map_image(level.image)
 
-    [Enemy(i, player) for i in level.get_enemies_pos()]
+    if level.get_enemies_1_pos():
+        [Enemy1(i, player) for i in level.get_enemies_1_pos()]
+    if level.get_enemies_2_pos():
+        [Enemy2(i, player) for i in level.get_enemies_2_pos()]
+
+    end_screen = None
+    if level.get_end_rect():
+        end_screen = EndScreen()
 
     cur = db.cursor()
     fps_switch = cur.execute(f'SELECT value FROM settings WHERE name="show_fps"').fetchall()[0][0]
 
-    ui.set_hp(player.hp)
+    ui.set_hp(stats['hp'])
 
     run = True
     clock = pygame.time.Clock()
     shoot_timer = pygame.time.get_ticks()
+    spawn_time = pygame.time.get_ticks()
     while run:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
-            if event.type == pygame.MOUSEBUTTONDOWN and player.dead == 0:
+            if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 3 and pygame.time.get_ticks() - shoot_timer > 500 and player.collisions['bottom']:
                     player.cur_frame = 0
                     player.step_frame = 1
@@ -56,6 +62,7 @@ def start_game(level_name):
             if event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1 and player.last_anim.startswith('punch'):
                     player.last_anim = ''
+                    player.step_frame = 2
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
@@ -72,12 +79,6 @@ def start_game(level_name):
                     music.resume()
                 if event.key == pygame.K_q:
                     ui.activate_rage()
-                if event.key == pygame.K_h:  # TODO: Убрать. Для тестов.
-                    if player.hp > 0:
-                        player.hp -= 1
-                        ui.remove_hp()
-                if event.key == pygame.K_j:
-                    ui.kill(100)
         all_sprites.update(tiles=level.tiles, enemies=enemies, player=player_group)
         screen.fill((0, 0, 0))
         camera.draw_offset(player)
@@ -86,20 +87,18 @@ def start_game(level_name):
         if player.hp < ui.hp_amount:
             ui.remove_hp()
         if player.hp <= 0:
-            player.death()
-            if player.dead == 2:
-                death_screen.set_last_frame()
-                death_screen.set_stats(player.kills, time_convert(pygame.time.get_ticks()))
-                music.pause()
-                pygame.mixer.fadeout(150)
-                menu_open = death_screen.start()
-                pygame.mixer.fadeout(150)
-                if menu_open:
-                    return 'menu'
-                else:
-                    return 'restart'
+            death_screen.set_last_frame()
+            death_screen.set_stats(player.kills, time_convert(pygame.time.get_ticks() - spawn_time))
+            music.pause()
+            pygame.mixer.fadeout(150)
+            menu_open = death_screen.start()
+            pygame.mixer.fadeout(150)
+            if menu_open:
+                return 'menu'
+            else:
+                return 'restart'
         if player.kills > ui.kills:
-            ui.kill(50)  # TODO: Сделать коэффициент
+            ui.kill(10)
         if ui.combo_timer:
             if player.combo != ui.combo:
                 player.combo = ui.combo
@@ -110,6 +109,41 @@ def start_game(level_name):
             player.raging = True
         else:
             player.raging = False
+
+        if level.get_exit_rect():
+            if level.get_exit_rect().colliderect(player.rect):
+                if len(enemies) == 0:
+                    menu.show_loading()
+                    stats['hp'] = player.hp
+                    stats['rage'] = ui.rage_value
+                    stats['max_combo'] = max(death_screen.max_combo, stats['max_combo'])
+                    stats['kills'] += player.kills
+                    stats['live_time'] += pygame.time.get_ticks() - spawn_time
+                    save_stats()
+                    return 'next'
+                else:
+                    ui.draw_warn(len(enemies))
+        elif level.get_end_rect():
+            if level.get_end_rect().colliderect(player.rect):
+                if len(enemies) == 0:
+                    stats['hp'] = player.hp
+                    stats['rage'] = ui.rage_value
+                    stats['max_combo'] = max(death_screen.max_combo, stats['max_combo'])
+                    stats['kills'] += player.kills
+                    stats['live_time'] += pygame.time.get_ticks() - spawn_time
+                    save_stats()
+
+                    end_screen.set_last_frame()
+                    end_screen.set_stats(stats['kills'], stats['max_combo'], time_convert(stats['live_time']))
+                    menu_open = end_screen.start()
+                    music.pause()
+                    pygame.mixer.fadeout(150)
+                    if menu_open:
+                        return 'menu'
+                    else:
+                        return 'restart'
+                else:
+                    ui.draw_warn(len(enemies))
         ui.draw()
 
         music.check_combo(player.combo)
@@ -127,12 +161,34 @@ if __name__ == '__main__':
     menu = Menu()
     pause = Pause()
     death_screen = DeathScreen()
-    menu.start()
+
+    menu_answer = menu.start()
+    if menu_answer == 'erase':
+        reset_stats()
     generate_tiles()
-    answer = start_game('1')
+
+    player = Player()
+    music = Music()
+    answer = start_game(str(stats['level']))
     while answer:
         if answer == 'menu':
+            menu_answer = menu.start()
+            if menu_answer == 'erase':
+                reset_stats()
+            music.__init__()
+            ui.__init__()
+            ui.rage_value = stats['rage']
+
+        if answer == 'restart':
+            ui.__init__()
+            death_screen.__init__()
+            music.__init__()
+
+        if answer == 'next':
+            stats['level'] += 1
+
+        if answer == 'end':
             menu.start()
-        ui = UI()
-        death_screen = DeathScreen()
-        answer = start_game('1')  # Пока что игра просто перезапускается, ибо нет контрольных точек
+        else:
+            answer = start_game(str(stats['level']))
+db.close()
